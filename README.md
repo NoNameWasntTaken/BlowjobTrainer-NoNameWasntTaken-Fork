@@ -15,7 +15,13 @@ A personal fork of the blowjob trainer react application.
 
 ## Anticipated Questions:
 
+- **What do I actually do with any of this?**
+  - Whatever you want. Take inspiration for future features, copy/paste source code into your version, ignore it completely - whatever floats your boat.
+- **Was this vibe coded?**
+  - Yep. I have some experience in React, so I could generally follow what the AI was doing. But I will admit that I am not skilled enough to build all of this from scratch. Take that as you will.
+- **If I do take inspriation or source code into my own version, do I need to credit you?**
+  - Nope. If you want to credit me as NoNameWasntTaken that's fine, but unnecessary. I can't really take credit for this in the first place (see previous question).
 - **Why would you do this?**
-- - Idk.
+  - Idk.
 - **Why 34 revisions?**
-- - Because r34 go brrrr.
+  - Because r34 go brrrr.
