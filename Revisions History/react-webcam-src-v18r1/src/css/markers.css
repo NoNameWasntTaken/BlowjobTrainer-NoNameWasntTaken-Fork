@@ -1,0 +1,37 @@
+.marker-circle {
+    border-radius: 50%;
+    border: 2px solid red;
+    position: absolute;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    text-align: center;
+}
+
+.markers-wrapper {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 10px;
+}
+
+.marker-container {
+    text-align: center;
+}
+
+.preview-circle {
+    border-style: solid;
+    border-width: 8px;
+    border-radius: 50%;
+    width: 48px;
+    height: 48px;
+    background-color: green;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 10px;
+    font-size: 2em;
+}
+
+.marker-text {
+    font-size: 14px;
+}

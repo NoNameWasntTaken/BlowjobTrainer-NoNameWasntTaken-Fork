@@ -1,0 +1,33 @@
+/* Speak task: larger UI text than default task typography */
+.speak-detector h6 {
+    font-size: 2.15rem;
+}
+
+.speak-detector p {
+    font-size: 2rem;
+    line-height: 1.45;
+}
+
+/* Task helpText — largest body copy in this panel */
+.speak-detector-help {
+    font-size: 2.35rem;
+    line-height: 1.4;
+}
+
+.speak-detector code {
+    font-size: 0.92em;
+}
+
+@media (min-width: 550px) {
+    .speak-detector h6 {
+        font-size: 2.45rem;
+    }
+
+    .speak-detector p {
+        font-size: 2.15rem;
+    }
+
+    .speak-detector-help {
+        font-size: 2.6rem;
+    }
+}

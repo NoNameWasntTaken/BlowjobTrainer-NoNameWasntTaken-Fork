@@ -1,0 +1,35 @@
+.achievement {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px
+}
+
+.achievement.completed {
+    border-color: #33C3F0
+}
+
+.achievement-icon {
+    color: #bbb
+}
+
+.achievement.completed .achievement-icon {
+    color: #33C3F0
+}
+
+.achievement-content {
+    flex: 1
+}
+
+
+.progress-bar-container {
+    height: 8px;
+    background: #e5e7eb;
+    border-radius: 4px;
+    overflow: hidden
+}
+
+.progress-bar {
+    height: 100%;
+    background: #33C3F0
+}

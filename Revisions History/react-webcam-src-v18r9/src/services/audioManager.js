@@ -1,0 +1,529 @@
+/**
+ * Audio Manager - Manages default and custom audio packs
+ * Provides unified API for accessing audio files
+ */
+
+import { AUDIO } from '../components/Tasks/audio'
+import { storageService, audioFileService } from './storageService'
+import { resolveAudioReference, getAudioFile as resolveAudioFile, getAudioKey as resolveAudioKey } from './audioResolver'
+import { activePackIdAtom } from '../atoms/audioAtom'
+import { store } from '../store'
+import JSZip from 'jszip'
+
+let activeCustomPack = null
+let fallbackPack = null // Fallback pack for when primary pack doesn't have a file
+
+/**
+ * Custom error class for pack ID conflicts
+ */
+class PackIdConflictError extends Error {
+    constructor(existingId, existingName) {
+        super(`Pack ID conflict: Pack "${existingName}" (ID: ${existingId}) already exists`)
+        this.name = 'PackIdConflictError'
+        this.existingId = existingId
+        this.existingName = existingName
+    }
+}
+
+/**
+ * Load active custom audio pack from storage
+ */
+const loadActivePack = () => {
+    const activePackId = storageService.getActiveAudioPack()
+    if (activePackId) {
+        activeCustomPack = storageService.loadAudioPack(activePackId)
+        // Initialize the atom with the loaded pack ID
+        try {
+            store.set(activePackIdAtom, activePackId)
+        } catch (error) {
+            console.error('Failed to initialize active pack atom:', error)
+        }
+    } else {
+        activeCustomPack = null
+        // Ensure atom is null if no pack is active
+        try {
+            store.set(activePackIdAtom, null)
+        } catch (error) {
+            console.error('Failed to initialize active pack atom:', error)
+        }
+    }
+}
+
+// Initialize on module load
+loadActivePack()
+
+/**
+ * Audio Manager API
+ */
+export const audioManager = {
+    /**
+     * Get audio file path(s) for a reference
+     * @param {string|string[]|object} audioRef - Audio reference
+     * @returns {string|string[]|null} - Resolved audio path(s)
+     */
+    getAudio: (audioRef) => {
+        return resolveAudioReference(audioRef, activeCustomPack, fallbackPack)
+    },
+
+    /**
+     * Get a single random audio file from a reference (synchronous version for backward compatibility)
+     * Note: This doesn't resolve custom content URLs - use getAudioFile() for that
+     * @param {string|string[]|object} audioRef - Audio reference
+     * @returns {string|null} - Single audio file path
+     */
+    getAudioFileSync: (audioRef) => {
+        return resolveAudioFile(audioRef, activeCustomPack, fallbackPack)
+    },
+
+    /**
+     * Get a single random audio file from a reference
+     * @param {string|string[]|object} audioRef - Audio reference
+     * @returns {Promise<string|null>} - Single audio file path/URL (async for custom content)
+     */
+    getAudioFile: async (audioRef) => {
+        // resolveAudioFile picks random from arrays, but we need to handle arrays of custom-content URLs
+        // First, get the resolved value (could be string or array)
+        let resolved = resolveAudioFile(audioRef, activeCustomPack, fallbackPack)
+        
+        // If resolved is an array, resolve all custom-content URLs before picking random
+        if (Array.isArray(resolved)) {
+            const resolvedArray = await Promise.all(
+                resolved.map(async (item) => {
+                    if (item && typeof item === 'string' && item.startsWith('custom-content://')) {
+                        const url = await audioFileService.getAudioFile(item)
+                        return url || item // Fallback to original if not found
+                    }
+                    return item // Regular path, return as-is
+                })
+            )
+            // Pick random from resolved array
+            return resolvedArray[Math.floor(Math.random() * resolvedArray.length)]
+        }
+        
+        // Handle single value - ensure it's a string (resolveAudioFile should guarantee this)
+        if (resolved && typeof resolved === 'string') {
+            // If it's a custom content URL, resolve it from IndexedDB
+            if (resolved.startsWith('custom-content://')) {
+                const url = await audioFileService.getAudioFile(resolved)
+                return url || resolved // Fallback to original if not found
+            }
+            return resolved
+        }
+        
+        // Fallback for unexpected types
+        return resolved
+    },
+
+    /**
+     * Get the string key for an audio path (reverse lookup)
+     * @param {string} audioPath - Audio file path
+     * @returns {string|null} - String reference like "Category.KEY" or null
+     */
+    getAudioKey: (audioPath) => {
+        return resolveAudioKey(audioPath, activeCustomPack)
+    },
+
+    /**
+     * Get the default AUDIO object (for backward compatibility)
+     */
+    getDefaultAudio: () => {
+        return AUDIO
+    },
+
+    /**
+     * Get active custom audio pack
+     */
+    getActiveCustomPack: () => {
+        return activeCustomPack
+    },
+
+    /**
+     * Get fallback audio pack
+     */
+    getFallbackPack: () => {
+        return fallbackPack
+    },
+
+    /**
+     * Set fallback audio pack (used when primary pack doesn't have a file)
+     * @param {string|null} packId - Pack ID or null to clear fallback
+     */
+    setFallbackPack: (packId) => {
+        if (packId) {
+            fallbackPack = storageService.loadAudioPack(packId)
+        } else {
+            fallbackPack = null
+        }
+    },
+
+    /**
+     * Set active custom audio pack
+     * @param {string|null} packId - Pack ID or null to use default
+     */
+    setActiveCustomPack: (packId) => {
+        // Revoke URLs for previously active pack
+        if (activeCustomPack && activeCustomPack.id) {
+            audioFileService.revokePackUrls(activeCustomPack.id)
+        }
+        
+        // Update atom for React reactivity using store API with error handling
+        try {
+            store.set(activePackIdAtom, packId)
+        } catch (error) {
+            console.error('Failed to update active pack atom:', error)
+            // Continue with module variable update even if atom update fails
+        }
+        
+        // Update module variable for backward compatibility
+        if (packId) {
+            activeCustomPack = storageService.loadAudioPack(packId)
+            storageService.setActiveAudioPack(packId)
+        } else {
+            activeCustomPack = null
+            storageService.setActiveAudioPack(null)
+        }
+    },
+
+    /**
+     * Get all available audio packs (default + custom)
+     */
+    getAllPacks: () => {
+        const customPacks = storageService.getAllAudioPacks()
+        return {
+            default: {
+                id: 'default',
+                name: 'Default Audio Pack',
+                isDefault: true
+            },
+            ...customPacks
+        }
+    },
+
+    /**
+     * Save a custom audio pack
+     * @param {object} packData - Pack data with id, name, audioFiles, etc.
+     */
+    savePack: (packData) => {
+        return storageService.saveAudioPack(packData)
+    },
+
+    /**
+     * Load a custom audio pack
+     * @param {string} packId - Pack ID
+     */
+    loadPack: (packId) => {
+        return storageService.loadAudioPack(packId)
+    },
+
+    /**
+     * Delete a custom audio pack
+     * @param {string} packId - Pack ID
+     */
+    deletePack: async (packId) => {
+        // Revoke URLs before deleting
+        audioFileService.revokePackUrls(packId)
+        
+        // Delete audio files
+        await audioFileService.deletePackFiles(packId)
+        
+        // Delete pack metadata
+        storageService.deleteAudioPack(packId)
+        
+        // If this was the active pack, clear it
+        if (activeCustomPack && activeCustomPack.id === packId) {
+            audioManager.setActiveCustomPack(null)
+        }
+    },
+
+    /**
+     * Validate active pack exists and clear if missing
+     */
+    validateActivePack: () => {
+        const activePackId = storageService.getActiveAudioPack()
+        if (activePackId) {
+            const pack = storageService.loadAudioPack(activePackId)
+            if (!pack) {
+                console.warn(`Active pack ${activePackId} not found, clearing`)
+                storageService.setActiveAudioPack(null)
+                activeCustomPack = null
+                // Also update atom via store with error handling
+                try {
+                    store.set(activePackIdAtom, null)
+                } catch (error) {
+                    console.error('Failed to update active pack atom:', error)
+                }
+            }
+        }
+    },
+
+    /**
+     * Export a custom audio pack as a ZIP file
+     * @param {string} packId - Pack ID to export
+     * @returns {Promise<Blob>} - ZIP file blob
+     */
+    exportPack: async (packId) => {
+        const pack = storageService.loadAudioPack(packId)
+        if (!pack) {
+            throw new Error(`Pack ${packId} not found`)
+        }
+        
+        // Only allow exporting custom packs
+        if (packId === 'default' || pack.isDefault) {
+            throw new Error('Default audio pack cannot be exported')
+        }
+        
+        const zip = new JSZip()
+        
+        // Prepare manifest with normalized paths (audio/category/filename.mp3 format)
+        const manifestAudioFiles = {}
+        
+        // Add audio files to ZIP at root level, and build manifest
+        for (const [category, keys] of Object.entries(pack.audioFiles || {})) {
+            manifestAudioFiles[category] = {}
+            
+            for (const [key, paths] of Object.entries(keys)) {
+                const filePaths = Array.isArray(paths) ? paths : [paths]
+                const manifestPaths = []
+                
+                // Export all files in array (preserve array structure)
+                for (const filePath of filePaths) {
+                    if (filePath && typeof filePath === 'string' && filePath.startsWith('custom-content://')) {
+                        // Get blob from IndexedDB
+                        const objectUrl = await audioFileService.getAudioFile(filePath)
+                        if (objectUrl) {
+                            const response = await fetch(objectUrl)
+                            const blob = await response.blob()
+                            
+                            // Extract filePath properly
+                            const extractedPath = audioFileService.extractFilePath(filePath)
+                            if (extractedPath) {
+                                // Store in ZIP as: audio/category/filename.mp3 (at root level)
+                                const zipPath = extractedPath
+                                zip.file(zipPath, blob)
+                                
+                                // Add normalized path to manifest (audio/category/filename.mp3)
+                                manifestPaths.push(extractedPath)
+                            }
+                        }
+                    }
+                }
+                
+                // Preserve array structure in manifest (single value or array)
+                manifestAudioFiles[category][key] = filePaths.length === 1 ? manifestPaths[0] : manifestPaths
+            }
+        }
+        
+        // Add manifest with normalized paths
+        const manifest = {
+            format: 'audio-pack-v1',
+            pack: {
+                id: pack.id,
+                name: pack.name,
+                author: pack.author || '',
+                version: pack.version || '1.0.0',
+                description: pack.description || '',
+                createdAt: pack.createdAt || new Date().toISOString()
+            },
+            audioFiles: manifestAudioFiles
+        }
+        zip.file('audio-pack.json', JSON.stringify(manifest, null, 2))
+        
+        // Generate ZIP blob
+        const zipBlob = await zip.generateAsync({ type: 'blob' })
+        
+        // Clean up any temporary object URLs created during export
+        // (URLs are cached per pack, so they'll be cleaned up when pack is deactivated/deleted)
+        
+        return zipBlob
+    },
+
+    /**
+     * Import an audio pack from a ZIP file
+     * @param {File} zipFile - ZIP file to import
+     * @param {object} options - Import options (overwrite, newId)
+     * @returns {Promise<object>} - Imported pack data with warnings
+     */
+    importPack: async (zipFile, options = {}) => {
+        const zip = new JSZip()
+        const zipData = await zip.loadAsync(zipFile)
+        
+        // Validate structure (must contain audio-pack.json)
+        const manifestFile = zipData.file('audio-pack.json')
+        if (!manifestFile) {
+            throw new Error('Invalid audio pack: missing audio-pack.json manifest')
+        }
+        
+        // Parse manifest JSON
+        const manifestText = await manifestFile.async('string')
+        let manifest
+        try {
+            manifest = JSON.parse(manifestText)
+        } catch (error) {
+            throw new Error(`Invalid audio pack: malformed JSON in manifest - ${error.message}`)
+        }
+        
+        // Validate manifest format
+        if (manifest.format !== 'audio-pack-v1') {
+            throw new Error(`Unsupported audio pack format: ${manifest.format}`)
+        }
+        
+        if (!manifest.pack || !manifest.pack.id) {
+            throw new Error('Invalid audio pack: missing pack ID in manifest')
+        }
+        
+        // Check for pack ID conflicts
+        const existingPack = storageService.loadAudioPack(manifest.pack.id)
+        if (existingPack) {
+            if (options.overwrite === true) {
+                // User confirmed overwrite
+            } else if (options.newId) {
+                // User provided new ID
+                manifest.pack.id = options.newId
+            } else {
+                // Throw custom error for UI component to handle
+                throw new PackIdConflictError(manifest.pack.id, existingPack.name)
+            }
+        }
+        
+        // Check IndexedDB quota before import
+        let totalSize = 0
+        for (const [, keys] of Object.entries(manifest.audioFiles || {})) {
+            for (const [, paths] of Object.entries(keys)) {
+                const filePaths = Array.isArray(paths) ? paths : [paths]
+                for (const filePath of filePaths) {
+                    // Try both paths
+                    const zipPath1 = `${manifest.pack.id}/${filePath}`
+                    const zipPath2 = filePath
+                    const file = zipData.file(zipPath1) || zipData.file(zipPath2)
+                    if (file) {
+                        totalSize += file._data ? file._data.uncompressedSize : 0
+                    }
+                }
+            }
+        }
+        
+        if ('storage' in navigator && 'estimate' in navigator.storage) {
+            const estimate = await navigator.storage.estimate()
+            const available = estimate.quota - estimate.usage
+            if (available < totalSize) {
+                throw new Error(`Insufficient storage. Need ${totalSize} bytes, have ${available} bytes available.`)
+            }
+        }
+        
+        // Process audio files - handle both {packId}/audio/ and audio/ structures
+        const processedAudioFiles = {}
+        for (const [category, keys] of Object.entries(manifest.audioFiles || {})) {
+            processedAudioFiles[category] = {}
+            
+            for (const [key, paths] of Object.entries(keys)) {
+                // Preserve array structure
+                const filePaths = Array.isArray(paths) ? paths : [paths]
+                const storedPaths = []
+                
+                for (const filePath of filePaths) {
+                    // Skip empty/null/undefined paths (they mean "no audio")
+                    if (!filePath || typeof filePath !== 'string' || filePath.trim() === '') {
+                        continue
+                    }
+                    
+                    // Normalize path (remove packId prefix if present, ensure audio/ prefix)
+                    let normalizedPath = filePath
+                    if (normalizedPath.startsWith(`${manifest.pack.id}/audio/`)) {
+                        normalizedPath = normalizedPath.replace(`${manifest.pack.id}/audio/`, 'audio/')
+                    } else if (!normalizedPath.startsWith('audio/')) {
+                        normalizedPath = `audio/${normalizedPath}`
+                    }
+                    
+                    // Extract file from ZIP (try both paths)
+                    let blob = null
+                    const zipPath1 = `${manifest.pack.id}/${normalizedPath}`
+                    const zipPath2 = normalizedPath
+                    
+                    const file = zipData.file(zipPath1) || zipData.file(zipPath2)
+                    if (file) {
+                        blob = await file.async('blob')
+                        
+                        // Validate file size (10MB max)
+                        const MAX_FILE_SIZE = 10 * 1024 * 1024
+                        if (blob.size > MAX_FILE_SIZE) {
+                            throw new Error(`File ${normalizedPath} exceeds 10MB limit (${(blob.size / 1024 / 1024).toFixed(2)}MB)`)
+                        }
+                        
+                        // Validate file format - check extension since ZIP blobs don't preserve MIME types
+                        const fileExtension = normalizedPath.toLowerCase().match(/\.([^.]+)$/)?.[1]
+                        if (!fileExtension || !['mp3', 'wav'].includes(fileExtension)) {
+                            // Fallback: check MIME type if available (for direct file uploads)
+                            if (!blob.type || !blob.type.match(/audio\/(mp3|wav|mpeg)/)) {
+                                throw new Error(`File ${normalizedPath} is not a valid audio format (MP3/WAV only)`)
+                            }
+                        }
+                    } else {
+                        throw new Error(`Audio file not found in ZIP: ${filePath}`)
+                    }
+                    
+                    // Store file and get custom-content URL
+                    const customContentUrl = await audioFileService.storeAudioFile(
+                        manifest.pack.id,
+                        normalizedPath,
+                        blob
+                    )
+                    storedPaths.push(customContentUrl)
+                }
+                
+                // Preserve array structure in pack metadata
+                processedAudioFiles[category][key] = filePaths.length === 1 
+                    ? storedPaths[0] 
+                    : storedPaths
+            }
+        }
+        
+        // Validate pack structure against default AUDIO
+        const warnings = []
+        const defaultCategories = Object.keys(AUDIO)
+        const packCategories = Object.keys(processedAudioFiles)
+        
+        // Check for extra categories
+        packCategories.forEach(cat => {
+            if (!defaultCategories.includes(cat)) {
+                warnings.push(`Custom category "${cat}" found (not in default structure)`)
+            }
+        })
+        
+        // Check for missing categories
+        defaultCategories.forEach(cat => {
+            if (!packCategories.includes(cat)) {
+                warnings.push(`Expected category "${cat}" is missing`)
+            }
+        })
+        
+        // Check for extra keys within categories
+        packCategories.forEach(cat => {
+            if (AUDIO[cat]) {
+                const defaultKeys = Object.keys(AUDIO[cat])
+                const packKeys = Object.keys(processedAudioFiles[cat] || {})
+                packKeys.forEach(key => {
+                    if (!defaultKeys.includes(key)) {
+                        warnings.push(`Extra key "${cat}.${key}" found (not in default structure)`)
+                    }
+                })
+            }
+        })
+        
+        // Save pack with processed audio files (preserving array structure)
+        const packData = {
+            ...manifest.pack,
+            audioFiles: processedAudioFiles
+        }
+        
+        storageService.saveAudioPack(packData)
+        
+        return {
+            pack: packData,
+            warnings
+        }
+    }
+}
+
+// Export PackIdConflictError for UI components
+export { PackIdConflictError }
+

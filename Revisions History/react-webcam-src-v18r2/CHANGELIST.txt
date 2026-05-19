@@ -1,0 +1,136 @@
+﻿Revision 2 - Executable Integration Feature
+===================================================
+
+Implemented optional executable script execution for all task types, allowing external programs to run when tasks start during gameplay. This function is only available when running the packaged desktop app - not supported in browser.
+
+
+
+MODIFIED FILES
+==============
+
+public/electron.js
+- Added IPC handlers for executable management (execute-external-program, check-file-exists, show-file-picker), process registry Map for tracking spawned processes, whitelist configuration for allowed directories and file extensions, path validation with symlink resolution, and async process cleanup on app exit with platform-specific signal handling.
+
+public/preload.js
+- Exposed secure executable APIs (executeExternalProgram, checkFileExists, showExecutablePicker) to renderer process via contextBridge.
+
+src/components/LevelEditor/TaskForm.jsx
+- Added executable path field with Browse button (file picker), Test button, and Clear button, applying to all task types with browser mode detection and appropriate messaging.
+
+src/components/Playing/Playing.js
+- Added executable execution in gotoNextTask() function that runs external programs non-blocking when tasks begin, with error handling that logs failures without disrupting gameplay.
+
+
+
+NEW FILES
+===================
+
+src/services/executableService.js
+- Service class for managing executable execution with Electron environment detection, browser fallback handling, and methods for selecting, testing, and running executables.
+
+scripts/
+- New directory where executable files are stored for running during gameplay.
+
+
+
+
+
+
+
+
+
+Revision 1 - Audio Pack Management UI Implementation
+=====================================================
+
+Implemented custom audio pack management, including state management, error handling, path normalization, and fixes for memory leaks. 
+Defined audio pack selection behavior:
+- Default levels use the currently selected audio pack from Content Library, with fallback to default audio files.*
+- Custom levels use their specified audio pack from level metadata, with fallback to the currently selected pack from Content Library, then default audio files.
+
+*NOTE: This behavior was defined, but not functional due to a bug. This is corrected in Revision 3.
+
+
+
+MODIFIED FILES
+==============
+
+package-lock.json
+- Regenerated **`npm`** lockfile (**lockfileVersion** 3) without edits to root **`package.json`** **`dependencies`**: the **`packages`** map shrinks overall but churns heavily—hundreds of nested paths added/removed and many **`version` / `resolved` / `integrity`** updates—dominated by **`@babel/*`** and related toolchain moving into the **7.27–7.28** release line plus nested dedupe layout changes from **`npm install`**.
+
+src/atoms/audioAtom.js
+- Added activePackIdAtom for reactive state management of the currently active audio pack.
+
+src/atoms/navAtom.js
+- Added AUDIO_PACK_EDITOR and CONTENT_LIBRARY navigation constants for the new UI components.
+
+src/services/levelManager.js
+- Added isDefaultLevel() helper function to check if a level is a default level.
+
+src/services/audioResolver.js
+- Added case-insensitive category matching function and updated resolveAudioReference to use case-insensitive matching when resolving audio references.
+- Updated resolveAudioReference() to accept optional fallbackPack parameter.
+- Added fallback pack resolution logic: tries primary pack, then fallback pack, then default AUDIO.
+- Updated getAudioFile() to support fallback pack parameter.
+
+src/services/storageService.js
+- Added object URL caching and cleanup system (revokePackUrls, extractPackId), checkFileExists function for duplicate detection, normalizeAudioPath helper with input validation, extractFilePath helper for custom-content URL parsing, and enhanced IndexedDB error handling with quota checking.
+
+src/services/audioManager.js
+- Added exportPack and importPack functions for ZIP-based pack sharing, updated setActiveCustomPack to sync with Jotai atom and cleanup object URLs, updated deletePack to revoke object URLs before deletion, added validateActivePack function for app load validation, fixed getAudioFile to properly handle arrays of custom-content URLs, and added PackIdConflictError custom error class for import conflict handling.
+- Added fallbackPack tracking variable and getFallbackPack() method.
+- Added setFallbackPack() method to set the fallback audio pack.
+- Updated getAudio(), getAudioFileSync(), and getAudioFile() to pass fallback pack to resolver.
+
+src/components/AudioPlayer.js
+- Refactored all useEffect hooks to properly handle async operations with cancellation logic, added Audio element cleanup to prevent memory leaks and overlapping playback, and updated to use async getAudioFile() consistently throughout.
+
+src/components/Training/Training.jsx
+- Added pack validation and auto-activation when a level is selected, with race condition prevention using cancellation tracking and early cancellation checks.
+- Modified handleSelectLevel() to implement new audio pack behavior: default levels do not change active pack (set fallback to default), custom levels with pack use level's pack as primary with currently selected pack as fallback, and custom levels without pack use currently selected pack with fallback to default.
+- Added import for storageService to access currently selected pack.
+
+src/components/LevelEditor/LevelEditor.jsx
+- Added Level ID display in Preview section for easy identification when using CLI, displayed in monospace font with light background for readability.
+- Removed disabled attribute from audio pack selector and updated label from "Audio Pack (coming soon):" to "Audio Pack:" to enable pack selection.
+- Changed dropdown option from "Default Audio Pack" to "Use Selected Audio".
+- Updated help text to explain behavior based on selection (specific pack vs. use selected audio).
+
+src/components/Navigation.js
+- Added navigation buttons for Audio Pack Editor and Content Library with appropriate icons and handlers, and reorganized menu layout into two rows: Row 1 (Help, Calibrate, Mic, Buttplug, Levels, Play) and Row 2 (Content Library, Audio Pack Editor, Edit Levels, Achievements).
+
+src/App.js
+- Added useEffect hook to call validateActivePack() after component mounts, and added routes for AudioPackEditor and ContentLibrary components in renderControls().
+
+
+
+NEW FILES
+===================
+
+src/store.js
+- Created Jotai store instance for updating atoms outside of React components, enabling reactive state management from service layer.
+
+src/components/AudioPackEditor/AudioPackEditor.jsx
+- Main component for creating and editing custom audio packs with metadata form, category management, file upload interface, and export/import functionality.
+- Fixed ESLint no-restricted-globals error by replacing confirm() with window.confirm() for explicit global access.
+
+src/components/AudioPackEditor/AudioCategoryEditor.jsx
+- Component for managing audio files within a single category, displaying keys and providing file upload and deletion capabilities.
+
+src/components/AudioPackEditor/AudioFileUploader.jsx
+- Reusable file upload component with drag-and-drop support, file size validation (10MB max), format validation (MP3/WAV only), automatic duplicate filename renaming, and IndexedDB quota checking.
+
+src/components/AudioPackEditor/AudioPackEditor.css
+- Styling for audio pack editor components to ensure consistent look and feel with the rest of the application.
+
+src/components/ContentLibrary/ContentLibrary.jsx
+- Main component for listing and managing all audio packs (default and custom) with activation, export, and delete functionality.
+- Fixed ESLint no-restricted-globals error by replacing confirm() with window.confirm() for explicit global access.
+
+src/components/ContentLibrary/AudioPackCard.jsx
+- Reusable card component for displaying audio pack information including metadata, active status indicator, and action buttons.
+
+src/components/ContentLibrary/ImportDialog.jsx
+- Modal dialog component for importing audio packs from ZIP files with conflict resolution (overwrite, rename, or cancel), progress indication, and error/warning display.
+
+src/components/ContentLibrary/ContentLibrary.css
+- Styling for content library components including grid layout for pack cards and modal dialog styling.

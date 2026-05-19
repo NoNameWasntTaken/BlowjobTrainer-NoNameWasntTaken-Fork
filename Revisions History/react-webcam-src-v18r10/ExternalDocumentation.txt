@@ -1,0 +1,392 @@
+External Integration Documentation
+==================================
+
+This document describes the Command-Line Interface (CLI) integration for running the application externally, including all available parameters, output formats, and default level IDs.
+
+================================================================================
+CLI PARAMETERS
+================================================================================
+
+All CLI parameters are optional. When no parameters are provided, the application runs normally.
+
+
+BASIC PARAMETERS
+----------------
+
+--level <levelId>
+    Run a specific level by ID. The application will start with a limited navigation menu and automatically load the specified level.
+        - Mutually exclusive with --calibrate-only
+        - If the level is not found, the application will display an error and exit with code 4
+        - The application will automatically close 15 seconds after level completion
+
+    Example: --level begint
+
+
+--output <filePath>
+    Specify the output path for session results JSON file. All relative paths are resolved relative to the current working directory.
+        - Required for exporting session results in external mode
+        - Directory will be created if it doesn't exist
+
+    Example: --output ./FILE_NAME.json
+    Default: session_results.json (if not specified)
+
+
+
+CALIBRATION PARAMETERS
+----------------------
+
+--calibration-data <filePath>
+    Path to a JSON file containing calibration data to load. All relative paths are resolved relative to the current working directory.
+        - Required when using --skip-calibration
+        - Calibration data will be applied immediately if --skip-calibration is used
+        - Otherwise, calibration data is loaded but not applied until user enters calibration mode or starts the level
+
+    Example: --calibration-data ./OUTPUT/LOCATION/FILE_NAME.json
+
+
+
+--skip-calibration
+    Skip the calibration requirement by using pre-loaded calibration data.
+        - Requires --calibration-data parameter with valid calibration data
+        - Calibration data is applied immediately on load
+        - Required for headless mode 
+
+    Example: --skip-calibration --calibration-data FILE_NAME.json
+
+
+
+--calibrate-only
+    Run the application in calibration-only mode. The application will open the calibration screen and allow exporting calibration data. Automatically closes the application after calibration - no gameplay.
+        - Mutually exclusive with --level
+        - Use the "Complete Calibration" button to export and exit
+        - Calibration data is exported to the path specified by --output (or current working directory if not specified)
+
+    Example: --calibrate-only --output ./FILE_NAME.json
+
+
+
+--calibration-time <seconds>
+    Set an optional time limit (in seconds) for calibration. A countdown timer will be displayed. If the timer reaches 0 before the level starts, the application closes automatically with exit code 2.
+        - Must be an integer >= -1
+        - Setting to -1 disables the timer (or don't specify the parameter)
+        - Timer is displayed at the top of the screen in HH:MM:SS format
+
+    Example: --calibration-time 300
+    Default: -1 (disabled, infinite time)
+
+
+
+--pause-time <seconds>
+    Set an optional time limit (in seconds) for pause duration during active gameplay. A countdown timer will be displayed while paused. If the timer reaches 0 during gameplay, the application closes with exit code 3.
+        - Must be an integer >= -1
+        - Setting to -1 disables the timer (or don't specify the parameter)
+        - Timer only counts down while the game is paused
+        - Timer is displayed at the top of the screen
+
+    Example: --pause-time 120
+    Default: -1 (disabled, infinite pause time)
+
+
+
+
+AUDIO PACK PARAMETERS
+---------------------
+
+--audio-pack <packId>
+    Pre-select an audio pack to use for the level. This setting may be overridden by a custom level's audio pack selection, if the custom level has an audio pack specified and that audio pack exists.
+        - Audio pack priority order:
+            1. Level's audioPackId (if level has included audio and pack is found)
+            2. CLI --audio-pack (this parameter, if provided)
+            3. Default audio
+        - Default levels will always take this parameter over the default audio
+
+    Example: --audio-pack my-custom-pack
+
+
+
+
+ADVANCED PARAMETERS
+-------------------
+
+--headless
+    Run without UI for calibration, immediately launching the selected level. Navigation is hidden, only essential feedback is shown.
+        - Requires passing '--skip-calibration', and by extension, '--calibration-data' with valid calibration data.
+        - Level starts playing automatically - no user input required
+        - If calibration is required, headless mode will result in an error and Exits
+
+    Example: --headless --level begint --skip-calibration --calibration-data ./OUTPUT/LOCATION/FILE_NAME.json
+
+
+
+
+--validate-level <levelId>
+    Validation mode. Check if a level exists and is valid. If the level specifies a custom audio pack, ensure that audio pack exists as well. Useful when checking that custom levels exist and are configured properly. Generally redundant when checking for custom levels
+        - Mutually exclusive with other run modes (--level, --calibrate-only)
+        - Exits with code 0 if valid, code 5 if invalid
+
+    Example: --validate-level CUSTOM_LEVEL_ID
+
+
+
+
+
+Sample PARAMETER COMBINATIONS
+----------------------
+
+Valid combinations:
+    • --level + --output, --calibration-data, --skip-calibration, --calibration-time, --pause-time, --audio-pack
+    • --calibrate-only + --output
+    • --validate-level (no additional parameters)
+    • --headless + --level, + --skip-calibration + --calibration-data
+
+Invalid combinations:
+    • --level + --calibrate-only (and vice versa)
+    • --validate-level + any other run mode
+    • --skip-calibration without --calibration-data
+    • --headless without --skip-calibration + --calibration-data
+
+
+
+
+================================================================================
+EXIT CODES
+================================================================================
+
+The application uses standardized exit codes to indicate completion status:
+
+0 - Success
+    Level completed successfully, or validation passed
+
+1 - User Closed
+    User manually closed the application window (not a programmatic exit)
+
+2 - Calibration Timeout
+    The calibration timer (--calibration-time) reached 0 before the level started
+
+3 - Pause Timeout
+    The pause timer (--pause-time) reached 0 while the game was paused
+
+4 - Level Not Found
+    The specified level ID was not found or is invalid
+
+5 - Error
+    General error condition, including:
+    - Pre-flight checks failed (webcam unavailable, missing dependencies)
+    - Level structure validation failed
+    - Export failed
+    - Validation failed (when running --validate-level)
+    - Other runtime errors
+
+
+
+================================================================================
+SESSION OUTPUT JSON FORMAT
+================================================================================
+
+When a level completes in external mode, session results are exported to a JSON file. The file structure is as follows:
+
+{
+    "sessionId": "uuid-string",
+    "timestamp": "2024-01-01T12:00:00.000Z",
+    "levelId": "begint",
+    "levelTitle": "Beginner Training",
+    "completionStatus": "completed",
+    "completed": true,
+    "score": 1250,
+    "totalTime": 420,
+    "sessionStats": {
+        "loads": 3,
+        "dives": 15,
+        "holdTime": 45,
+        "penalties": 2
+    },
+    "taskDetails": [
+        {
+            "taskType": "hold",
+            "completed": true,
+            "score": 300,
+            "summary": {
+                "type": "hold",
+                "desc": "Hold at depth 2 for 10 seconds",
+                "targetDepth": 2,
+                "counts": {
+                    "perfect": 2,
+                    "pass": 1,
+                    "fail": 0,
+                    "penalties": 0
+                },
+                "totalTimeHeld": 30,
+                "score": 300
+            }
+        },
+        ...
+    ]
+}
+
+
+FIELD DESCRIPTIONS
+------------------
+
+Top-level fields:
+    sessionId: Unique identifier for this session (UUID format)
+    timestamp: ISO 8601 timestamp of when the session completed
+    levelId: The ID of the level that was run
+    levelTitle: Human-readable title of the level
+    completionStatus: Status string indicating how the session ended
+        - "completed": Level completed successfully
+        - "user_closed": User manually closed the application
+        - "calibration_timeout": Calibration timer expired
+        - "pause_timeout": Pause timer expired
+        - "error": An error occurred during execution
+        - "level_not_found": The specified level was not found
+    completed: Boolean indicating if the level completed successfully
+    score: Final score achieved in the level
+    totalTime: Total play time in seconds
+
+sessionStats:
+    loads: Number of successful loads completed
+    dives: Total number of dives (from updown and hitdepth tasks)
+    holdTime: Total time held at depth in seconds
+    penalties: Total number of penalties incurred
+
+taskDetails:
+    Array of task summary objects, one for each task type encountered:
+    taskType: Type of task (e.g., "hold", "updown", "hitdepth", "clap")
+    completed: Boolean indicating if the task was completed
+    score: Points earned from this task type
+    summary: Detailed summary object containing:
+        - type: Task type
+        - desc: Task description
+        - counts: Object with perfect, pass, fail, and penalties counts
+        - totalTimeHeld: (for hold tasks) Total time held in seconds
+        - score: Points earned
+        - Other task-specific fields
+
+
+
+================================================================================
+DEFAULT LEVEL IDs
+================================================================================
+
+The following level IDs are available by default in the application:
+
+1. begint
+   Title: Beginner Training
+   Description: A beginner-friendly session focusing on shallow depths and basic techniques
+   Order: 1
+   Soft Mode: Yes
+
+2. quickbg
+   Title: Quick Blow and Go
+   Description: A quick blow and go session, nothing too heavy
+   Order: 2
+   Soft Mode: Yes
+
+3. basicr
+   Title: Suck Basics
+   Description: Focus on developing consistent rhythm and timing at easier depths.
+   Order: 3
+   Soft Mode: Yes
+
+4. dive101
+   Title: Cock Worship 101
+   Description: A longer slow session, no deep throats, but get comfy on your knees
+   Order: 4
+   Soft Mode: Yes
+
+5. intmed
+   Title: Intermediate Challenge
+   Description: Step up your training slut with more challenging depths and tempos
+   Order: 5
+   Soft Mode: No
+
+6. endurance
+   Title: Endurance Builder
+   Description: Longer session for true sluts, this is why it's called a blowjob!
+   Order: 6
+   Soft Mode: No
+
+7. deepfocus
+   Title: Deep Focus
+   Description: Specialized training focusing on training that throat with extended holds
+   Order: 7
+   Soft Mode: No
+
+8. speed
+   Title: Face Fucking
+   Description: Fast-paced session, hard and fast for when he wants to use your mouth
+   Order: 8
+   Soft Mode: No
+
+9. devotion
+   Title: Cock Devotion
+   Description: Longer session with some deepthroat holds and lots of sucking.
+   Order: 9
+   Soft Mode: No
+
+10. maxdepth
+    Title: Deepthroat Master
+    Description: Focused deepthroat training, expect gagging and choking while you are used.
+    Order: 10
+    Soft Mode: No
+
+11. elite
+    Title: Elite Endurance
+    Description: Extended 20-minute session, imagining two cocks using your mouth.
+    Order: 11
+    Soft Mode: No
+
+12. manyload
+    Title: Blowbang Challenge
+    Description: Ultimate 30-minute challenge, assume your place in the world servicing cocks.
+    Order: 12
+    Soft Mode: No
+
+
+CUSTOM LEVEL IDs
+----------------
+
+Custom levels can be created using the Level Editor in the application. Custom level IDs are typically in the format:
+    custom-<timestamp>
+
+To find custom level IDs:
+    1. Open the application without any CLI arguements (or just select the application icon)
+    2. Navigate to the Level Editor tab
+    3. The Level ID is displayed in the Preview section
+
+    Alternatively, use browser console: JSON.parse(localStorage.getItem('custom_levels')) in the application debug window
+
+
+
+================================================================================
+USAGE EXAMPLES
+================================================================================
+
+Run a single level:
+    npm run electron -- --level begint --output results.json
+
+Run a level with calibration data:
+    npm run electron -- --level begint --calibration-data cal.json --skip-calibration --output results.json
+
+Run a level with time limits:
+    npm run electron -- --level begint --calibration-time 300 --pause-time 120 --output results.json
+
+Run in headless mode (automated testing):
+    npm run electron -- --level begint --headless --skip-calibration --calibration-data cal.json --output results.json
+
+Validate a level:
+    npm run electron -- --validate-level begint
+
+Run calibration-only mode:
+    npm run electron -- --calibrate-only --output calibration.json
+
+
+
+================================================================================
+NOTES
+================================================================================
+
+- All relative file paths are resolved relative to the current working directory (where the CLI command is executed)
+- The application automatically closes after level completion with a 15-second delay
+- Countdown timer is displayed in external mode showing remaining time before close
+- Pre-flight checks verify webcam availability and required dependencies before starting

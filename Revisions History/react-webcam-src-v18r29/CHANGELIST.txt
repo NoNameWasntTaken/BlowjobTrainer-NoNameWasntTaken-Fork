@@ -1,0 +1,2050 @@
+﻿Revision 29 - Endless Task Voice Support
+=========================================
+
+Small changes and QOL improvements to Endless task configuration, including:
+    - The score events "Add Grace" and "Run Script" now support their own voice lines, with a default value of none (maintaining backwards compatibility).
+    - All score events now support custom voice line categories, using the same checkmark for "Show Custom Voice Lines" as the base voice lines of all tasks.
+    - The delete button for score events (the red 'X') has been moved to be in-line with the "Min+ Score" and "Max+ Score" selectors.
+    - The dropdown selector for score events has been reordered; "Add Grace" is now above "Run Script"
+
+
+
+MODIFIED FILES
+==============
+
+src/components/LevelEditor/TaskForm.jsx
+- Endless score events: graceVoiceKey / graceVoiceShowCustom for Add Grace (Rest getAudioOptionsForTaskType; voice + checkbox row layout).
+- Play Sound: soundVoiceShowCustom with task-level fallback; checkbox inline with sound select (reduced width).
+- Run Script: optional scriptVoiceKey / scriptVoiceShowCustom (same EVENT/custom options as Play Sound); script path row plus voice block.
+- Type switches strip grace-related fields, soundVoiceShowCustom, and scriptVoiceKey/scriptVoiceShowCustom when leaving the corresponding event types.
+- Score event type select option order: Play Sound, Add Grace, Run Script.
+- Delete-event button placed after +Max pts with spacer matching NumberControl label + 38px row for alignment.
+
+src/components/Playing/EndlessDive.js
+- add_grace: after applying grace, setFeedback(ev.graceVoiceKey) when set.
+- run_script: execute when executablePath is set; setFeedback(ev.scriptVoiceKey) when set (voice may play without a path).
+
+
+
+
+
+
+
+
+
+Revision 28 - More Audio Improvements
+======================================
+
+Fully resolved an issue (for real this time) where the background music test wouldn't be interrupted by switching tabs during the music fade-out time if the test was already ended.
+Updated clap detection to wait until instruction voice lines completes (plus a 200ms threshold) before counting any claps towards the total. This should reduce random increments in total claps during the beginning of the task.
+
+
+
+MODIFIED FILES
+==============
+
+src/components/Mic/Mic.js
+- `TEST_MUSIC_FADE_END_SLACK_MS`; `testMusicStopFadeEndTimeoutRef`; unmount cleanup clears the timeout then hard-stops session when `testMusicOnRef` is true.
+- `startTestMusic`: clear pending fade-end timeout before applying a new session.
+- `stopTestMusic`: defer `testMusicOnRef.current = false` until after fade duration + slack when fade-out is enabled and duration > 0; otherwise immediate; always clear any prior fade-end timeout.
+
+src/atoms/audioAtom.js
+- Comment on `taskInstructionVoicePhaseAtom`: documents instruction lifecycle for Speak and (with `useClapInstructionPhase` + `AudioPlayer`) Clap/Hold-and-Clap; excludes feedback lines.
+
+src/components/AudioPlayer.js
+- `instructionVoiceDrivesPhase` (Speak or CLAP or HOLDANDCLAP): set `taskInstructionVoicePhase` playing when starting instruction audio; `onEnded` and error path advance cooldown→200 ms→ready (formerly Speak-only after end).
+- `stopVoiceRequest`: apply the same cooldown/ready transition when trimmed instruction audio exists for Speak or Clap/Hold-and-Clap; `setSpeakPcmFeedAllowed(true)` only for Speak.
+
+src/hooks/useClapDetection.js
+- `taskInstructionVoicePhaseAtom` subscription; `instructionBlockingClapsRef`: gameplay mic suppresses `onClap` while phase is pending, playing, or cooldown; calibration lifecycle unchanged.
+
+src/components/Playing/Playing.js
+- `useClapInstructionPhase()` alongside `useSpeakRecognitionGate()`.
+
+src/hooks/useSpeakRecognitionGate.js
+- `isClapInstructionTask`: helper for CLAP/HOLDANDCLAP; speak gate skips `setPhase('idle')` for those types (PCM feed still opened).
+- `useClapInstructionPhase`: primes CLAP/HOLDANDCLAP instruction phase (pending; no-audio ready after 200 ms); exported from same module.
+
+
+
+
+
+
+
+
+
+Revision 27 - Clap Detection Improvements, Endless Task Balance Changes, Bug Fixes
+===================================================================================
+
+Clap detection has been made slightly stricter, requiring a spike in high-band frequency above the baseline value from previous frames in order to register a successful clap. This should reduce the instances of constant background noise (such as from fans) triggering claps constantly without user input.
+Endless tasks have received the following changes:
+    - Holds at depth 4 score per second has been reduced from 4 to 3.
+    - Dives have been reworked to calculate bonuses on a per-dive basis, rather than across the 5 most recent dives. Consistent dives should now award higher score than before. 
+        - The score feed now reflects the new dive bonuses, rather than just their base scores.
+    - Scoring thresholds for perfect / pass rank was reduced from 1.3 / 0.7 to 1.1 / 0.6, respectively. This should make it easier to pass the task.
+Bug fixes to the following issues:
+    - Leaving the audio tab while background music is playing now cuts off the music immediately rather than waiting for the configured fade-out duration, matching behavior in Revision 25.
+    - Hold scores in Endless dives are now rounded to the nearest tenth of a point, matching other scores in the score feed.
+    - The "↔" button above the depth diagram now works again.
+Various small UI text changes for consistency.
+
+
+
+MODIFIED FILES
+==============
+
+src/hooks/useClapDetection.js
+- New constants (`BASELINE_ALPHA`, `WARMUP_FRAMES`, `RESIDUAL_THRESHOLD_SCALE`, `RISE_SCALE`, `RISE_FLOOR`, `RESIDUAL_VISUAL_CAP`); refs for baseline, previous high, frame index; EMA baseline + residual + rise gates with existing interval debounce; `freqData` extended with `residual`, `rise`, `baseline`; canvas bar/threshold use residual scale.
+
+src/components/Playing/ClapDetector.js
+- Calibration help mentions spike above noise floor and sharp rise; frequency `<pre>` shows high band, residual×100, and rise×100.
+
+src/components/Cylinder/Cylinder.jsx
+- Wire ↔ button: `aria-pressed`, `button-primary` when inverted; toggles `depthDiagramInvertedAtom`.
+- When inverted, apply `scaleX(-1)` to `.cylinder-container` (`transformOrigin: center`) so cylinder backgrounds/borders/`round-right`/`round-bottom` mirror geometrically; `diagramTextUnmirror` wraps numbers, balls label, and task instructions with `scaleX(-1)` so glyphs stay readable beside App-level Mirror Mode.
+
+src/components/Cylinder/Cylinder.css
+- `grid-row-1`: `display:flex` plus equal `.cylinder-item { flex:1; min-width:0 }` (replaces grid) for equal shaft columns.
+
+src/components/Mic/Mic.js
+- `testMusicOnRef`: set `true` immediately after `setMusicSession` in `startTestMusic`, `false` at the start of `stopTestMusic`; removed per-render `testMusicOnRef.current = testMusicOn` so intermediate renders cannot reset the ref before test state commits; comment notes why unmount cleanup stays in sync with jotai session.
+
+src/components/Playing/endlessScoring.js
+- `HOLD_POINTS_PER_DEPTH` depth index 4 reduced from **4** to **3** pts/s for Endless holds (comment notes HoldDepth remains 4 elsewhere).
+- Replaced sliding-window rhythm/depth multipliers (`computeRhythmBonusMultiplier`, `computeDepthBonus`, `RHYTHM_BONUS_MAX` / `DEPTH_BONUS_MAX`) with **per-stroke helpers**: **`PRIOR_MATCH_BONUS_FRACTION` 0.1**, **`DIVE_HISTORY_MAX` (alias `DIVE_WINDOW_SIZE`)**, **`DIVE_IDLE_RESET_MS` 10000**; `getDepthRangeFromDive`, `depthRangesEqual`, `temposBucketMatch`, `countPriorDepthMatches`, `countPriorRhythmMatches`, `perDiveConsistencyBonuses`, `normalizeDiveHistoryForRestore`.
+
+src/components/Playing/EndlessDive.js
+- Prior-dive **`diveHistoryRef`** + **`lastDiveAtMsRef`**; accumulate **`rhythmBonusRef`** / **`depthBonusRef`** per dive (**`totalDiveScoreRef`** raw-only); idle **>10 s** clears history; grace scales from **this dive’s** rhythm/depth bonus ÷ raw; dive **`movement`** includes match counts, bonus amounts, **`displayScore`** (raw + bonuses); persistence **`diveHistory`**, **`lastDiveAtMs`** (restore **`diveWindow`** legacy via normalizer).
+
+src/components/Playing/Score.js
+- **`displayScore`** (or **`type === 'dive'`** with **`depthBonus`/`rhythmBonus`**) drives feed line **`pts`** (**`toFixed(1)`**); **`type === 'hold'`** (Endless holds) likewise formats main **`pts`** with **`toFixed(1)`**; other entry types unchanged.
+
+src/components/Training/scores.js
+- `calcPerfectEndlessScore`: multiplier **1.3 → 1.1** (`floor((timeLimit || 999) × …)`).
+- `calcPassEndlessScore`: multiplier **0.7 → 0.6**.
+
+
+
+NEW FILES
+=========
+
+src/atoms/depthDiagramInvertedAtom.js
+- `depthDiagramInvertedAtom` via `atomWithStorage('depthDiagramInverted', false)` for persisted toggle.
+
+
+
+
+
+
+
+
+
+Revision 26 - Color Sampling Hotfix
+===================================================================
+
+Fixed an issue where color sampling used the mirrored x-coordinate, which caused color detection in the previous revision to break.
+
+
+
+MODIFIED FILES
+==============
+
+src/hooks/useColorSampling.js
+- `sampleGridSquares`: read `getImageData(x, y, 5, 5)` at buffer-native coordinates; removed mirror flip; bounds guard uses `x + 5 > canvas.width` / `y + 5 > canvas.height`.
+
+
+
+
+
+
+Revision 25 - Midway Voice In Custom Hold Tasks, Camera Preview Rotation, Calibration JSON Extensions
+======================================================================================================
+
+Custom levels used to never use midway audio voice lines (such as 'Hold.*_HALFWAY' and 'Hold.*_3Q'), whereas default levels usually had these configured. The hold tasks in custom levels now have customizable midway voice line selection, defaulting to the corresponding 'HALFWAY' and '3Q' voice lines. Custom voice categories can also be chosen for midway voice lines by toggling the same 'Show Custom Voice Lines' option as for the main voice lines.
+A rotation button was added under the 'Camera On/Off' toggle, only visible when the camera is on. Pressing the button rotates the camera preview 90 degrees. Active grid placements will rotate with the camera preview. Most cameras capture a wider area rather than a taller one, so the overall camera viewport size has been increased by 10% to make 90-degree and 270-degree rotations more workable.
+Calibration data has been extended to include audio volume sliders, camera rotation values, and the active camera and audio devices. The aim is to make calibration import more consistent when loading sessions through CLI input. If a camera or audio device isn't found when importing from calibration data, that part of the calibration is ignored.
+
+
+
+MODIFIED FILES
+==============
+
+src/App.js
+- Camera area wrapper has no `scaleX(-1)`; Mirror Mode transform remains on Cylinder and main controls only so preview can own mirror/rotation.
+- External-mode calibration load paths use `await calibrationService.importCalibration(...)` (device resolution + apply) instead of synchronous `applyCalibration`.
+
+src/atoms/cameraAtom.js
+- `cameraVideoDeviceIdAtom` (`atomWithStorage`): persisted `videoinput` device id; `null` uses default preview constraint (`facingMode: 'user'`).
+
+src/components/Calibration/CalibrationImport.jsx
+- `await calibrationService.importCalibration(...)` for async validation, device resolution, and apply.
+
+src/components/LevelEditor/AudioSelector.jsx
+- `omitLabel` to hide the label column; optional `selectStyle` for non-summary `<select>` (merged with `boxSizing`).
+
+src/components/LevelEditor/TaskBuilder.jsx
+- New Hold tasks: `audioHalfway` / `audioThreeQuarter` for depth 1 via `getDefaultHoldAudioHalfway(1)` / `getDefaultHoldAudioThreeQuarter(1)`.
+
+src/components/LevelEditor/TaskForm.jsx
+- Hold-only row: Voice-Main / Voice-Halfway / Voice-3Q mode `<select>` (resets to Voice-Main on `task.id`, `targetDepth`, or type → hold); `AudioSelector` with `omitLabel` and mode-dependent `value` / `onChange` / `allowedOptions`; `holdVoiceLineSelectStyle` from longest Voice-Main option label (`ch` width); depth/type updates set `audioHalfway` / `audioThreeQuarter` from depth; removed separate "Hold halfway" / "Hold 3/4" rows.
+
+src/components/LevelEditor/taskAudioConfig.js
+- `HOLD_PROGRESS_HALF_AUDIO`, `HOLD_PROGRESS_3Q_AUDIO`; `holdDepthWord` / `HOLD_DEPTH_WORD`; `getDefaultHoldAudioHalfway`, `getDefaultHoldAudioThreeQuarter`; `getHoldProgressHalfAudioOptions`, `getHoldProgress3QAudioOptions` (optional Custom.* when custom voice lines are enabled).
+
+src/components/Playing/HoldDepth.js
+- Halfway and three-quarter `setFeedback` only when `task.audioHalfway` / `task.audioThreeQuarter` are set (truthy).
+
+src/components/Playing/Playing.js
+- External-mode begin path `await`s calibration file read and `await calibrationService.importCalibration(...)` so mic/camera device prefs apply before gameplay mic starts.
+
+src/components/Tasks/task.js
+- `createHOLDTask`: `audioHalfway` and `audioThreeQuarter` from `getDefaultHoldAudioHalfway` / `getDefaultHoldAudioThreeQuarter` (main `audio` logic unchanged).
+
+src/components/Webcam/WebcamDisplay.js
+- Stage sizing and `vW`/`vH` for pre-rotation video box; `previewLayerStyle` + `previewTransform`; `convertToCanvasCoordinates`; pointer handlers on inner stage; outline canvas; neutralized max dimensions on preview layer; toggle stack order Camera → Rotation → Mirror.
+- Video input selection uses `cameraVideoDeviceIdAtom`; `videoConstraints` uses `deviceId: { exact }` when set; `<Webcam key={...}>` remounts on device change.
+
+src/services/calibrationService.js
+- `exportCalibration`: adds `sfxVolume`, `voiceVolume`, `musicVolume`, `cameraRotation`, and optional `cameraDeviceId` / `audioInputDeviceId`.
+- `validateCalibration`: optional-field checks for volumes, rotation, and device id strings; `null` treated as unspecified.
+- `resolveCalibrationDevices`, `applyCalibrationWithDeviceResolution`; `importCalibration` is async (validate → resolve devices → `applyCalibration`).
+- `applyCalibration`: applies optional volumes, rotation, and device atoms when keys are present after resolution.
+
+
+
+NEW FILES
+=========
+
+src/utils/mediaDeviceEnumeration.js
+- `listVideoInputDeviceIdSet`, `listAudioInputDeviceIdSet` (permission + enumerate) for calibration import device filtering.
+
+src/atoms/cameraRotationAtom.js
+- Persisted atom; rotation normalized to {0, 90, 180, 270}.
+
+src/components/CameraRotationToggle.js
+- Button cycles rotation; highlights when non-zero.
+
+src/utils/previewToBufferCoords.js
+- `normalizeRotation`, `previewToBufferCoords(clientX, clientY, videoEl, bufferW, bufferH, rotationDeg, mirrored)` for brush, click, and overlay alignment.
+
+
+
+
+
+
+
+
+
+Revision 24 - Bug and Warning Fixes
+===================================================================
+
+Actually fixed gameplay issue where pausing a level and switching to the Audio tab breaks background music and speech detection (this was listed in Revision 23, but was not fully fixed)
+Fix for linter warnings regarding exhaustive dependencies in the custom level editor screen,
+
+
+
+MODIFIED FILES
+==============
+
+src/components/Mic/Mic.js
+- `testMusicOnRef` synced each render; unmount cleanup clears `musicPlaybackSessionAtom` only when `testMusicOnRef.current` (test music was running).
+
+src/components/LevelEditor/LevelEditor.jsx
+- `prerequisiteSourceLevels`: custom entries from `existingLevels` (filter current `level.id`, sort by `order` then id) plus default levels; deps `[level.id, existingLevels]` replace `existingLevels.length` + `getCustomLevels()` in the memo body.
+
+
+
+
+
+
+
+
+
+Revision 23 - Level Prerequisites, Custom Level Subfolders, and Bug Fixes
+==========================================================================
+
+Levels can now have prerequisites; a level may require previous levels to be completed before they become available. If the level's prerequisites have not been met, attempting to select the level will display the missing level completion requirements and minimum rank of those levels.
+    - Default levels have a predetermined order of availability; it generally goes in numerical order, but there is some branching. "Beginner Training" is unlocked by default, and must be completed first to unlock other levels. "Intermediate Challenge" serves as the gateway to more intense levels. Check the default levels for individual prerequisites.
+    - Custom levels can have their prerequisites customized. A custom level's prerequisites may include default levels or other custom levels. Deleting a custom level automatically removes it as a requirement from any other custom level that required it. Invalid requirements (due to a missing or invalid level) are ignored.
+    - The default profile now includes the option "Bypass Level Requirements", which can be enabled to ignore level prerequisites and play any level immediately. However, enabling this option will also disable stat tracking and achievement progression. Completing a level with this setting enabled will not contribute towards prerequisites for levels.
+    - New help text under the "Track Stats and Achievements" section notes that level progression is only tracked when enabled. 
+Custom levels have a new subfolder system for categorization. A custom level can be assigned to a subfolder for organization based on user preferences. 
+    - The names of each subfolder can be customized at the bottom of the "Edit Levels" tab; the folder names are global across all levels and profiles. 
+    - A subfolder with no levels assigned to it will be hidden automatically to reduce visual clutter. If only one subfolder has levels assigned to it, the entire subfolder navigation bar is hidden, as if no subfolders exist.
+Gameplay fix for the microphone not coming back online after pausing a level, changing tabs, and then resuming the level.
+UI fix for the achievemnt "Oral Service" displaying '# / 7' instead of '# / 12' (the actual number was always 12, this was just a visual bug).
+Hold times are now displayed to tenths of a second in the Profiles tab, specifically the 'Hold Time Stats' and 'Achievements' sections. 
+Small UI tweak in the Voice Pack Editor; the "Save Pack" button is now blue, similar to the "Save Level" button in the Edit Levels tab.
+
+
+
+MODIFIED FILES
+==============
+
+src/constants/customLevelFolders.js
+- `CUSTOM_SUBFOLDER_COUNT`, `DEFAULT_CUSTOM_SUBFOLDER`, `normalizeCustomSubfolder`, `defaultCustomFolderLabels`, `normalizeCustomLevelFolderNamesArray`, `createDefaultCustomLevelFolderNameSets`, `normalizeCustomLevelFolderNameSets`, `pickCustomLevelFolderNames`, `customFolderDisplayLabel`.
+
+src/constants/helpers.js
+- `formatHoldTimeStatsDisplay`: formats a duration like `formatTime` but rounds to 0.1s first and shows the seconds segment with at most one decimal (Hold Time Stats + time achievements).
+
+src/services/storageService.js
+- Key `custom_level_folder_names`; `getCustomLevelFolderNameSets`, `saveCustomLevelFolderNameSets`, `_migrateCustomFolderNamesFromPlayerProfiles` (seed from legacy profile names when global key missing).
+
+src/services/levelManager.js
+- `saveLevel`: persists normalized `customSubfolder` (1–5); normalizes custom `prerequisites`, runs `validateCustomPrerequisiteDAG`, persists `{ levelId, minRank }` rows.
+- `deleteLevel`: `scrubPrerequisiteReferencesToDeletedId` removes the deleted id from other customs’ prerequisite arrays.
+
+src/atoms/playerProfilesModel.js
+- Removed `customLevelFolderNames` from new profiles; normalization strips legacy `customLevelFolderNames` from loaded profiles.
+- `bypassLevelRequirements` on profiles (default false); migration/normalization ensures boolean.
+
+src/components/Training/Training.jsx
+- Custom tab subfolder buttons with `customLevelFolderNamesAtom` and `pickCustomLevelFolderNames`; filters grid by selected subfolder when multiple folders have levels; clears selection when changing folder.
+- Prerequisite gating via `evaluateLevelQualification` and `shouldEnforcePrerequisites`; locked level UI and `LevelPrerequisitesModal` when selection is not qualified (CLI preloaded level still skips prereq checks).
+
+src/components/Training/Level.css
+- `.level-difficulty` line under the level title (smaller type, muted color).
+- `.level.level-locked`: muted background, radius, slight opacity and grayscale for levels blocked by prerequisites.
+- `.level.level-locked .button:not(:hover)`: slightly reduced button opacity so locked rows read as disabled until hover.
+
+src/components/Training/Level.jsx
+- Optional `locked` prop (default false); when true, root gets `level-locked` so prerequisite-blocked levels match `Level.css`.
+- Difficulty line: `levelDifficultyService.getDifficulty(level)` rendered under the level-order button with `level-difficulty`.
+
+src/components/LevelEditor/LevelEditor.jsx
+- Level `customSubfolder` on new/load/import/save; subfolder select labels from `pickCustomLevelFolderNames`; global folder name section layout aligned to SummaryAudioEditor (tweak constants `SUBFOLDER_NAMES_SLOT_COLUMN_GAP_PX`, `SUBFOLDER_NAMES_SLOT_ROW_LABEL_GAP_PX`); extra top margin above that section; "Folder N:" labels and ids `custom-subfolder-name-folder-N`.
+- Prerequisite rows: add/remove, rank and prerequisite level selects (defaults + customs sorted by `order` then id); load/import/save `prerequisites`; `levelManager.saveLevel` applies normalization and DAG validation.
+
+src/components/AudioPackEditor/AudioPackEditor.jsx
+- "Save Pack": conditional `button-primary` when `pack.name.trim()` is non-empty (same condition as enabled save), aligned with Level Editor "Save Level" color; omits extra horizontal padding/margin so the control matches sibling buttons’ width.
+
+src/components/Achievements/ProfileManager.jsx
+- “Bypass level requirements” for the default profile: mutual exclusivity with “Track Stats & Achievements” when toggling.
+- Help paragraph under “Track Stats & Achievements” (when off, no scores / play history / achievement progress recorded for the profile).
+
+src/components/Achievements/Achievement.js
+- `type: 'time'` progress line uses `formatHoldTimeStatsDisplay` for current and target (tenth-second display).
+
+src/components/Achievements/achievementsData.js
+- `dozen` (Oral Service): `total` corrected from 7 to 12 so count progress matches `levelCompletionPersistence` unlock and strings.
+
+src/components/Achievements/Stats.jsx
+- Hold Time Stats total and per-depth rows use `formatHoldTimeStatsDisplay` instead of `formatTime`.
+
+src/components/Gameover/Gameover.js
+- After session merge, `getLevelsNewlyUnlockedByPrerequisites` drives an optional “Level(s) unlocked” summary above achievements when applicable.
+
+src/services/gameplayMicSession.js
+- `ensureGameplayMicBeforeResume()`: no-op when mic connected and gameplay session active; otherwise `stopGameplayMic()` if stale active, then `startGameplayMic()`; throws if restart fails.
+
+src/components/Playing/Playing.js
+- `handleResume()` awaits `ensureGameplayMicBeforeResume()` before `PlayState.PLAYING`; Resume button loading/disabled state while resuming.
+
+src/components/Navigation.js
+- Pause → play: async mic ensure before resuming; `resumeMicLoading` disables play/pause button during restart.
+
+src/components/Navigation/LimitedNavigation.jsx
+- Same resume mic flow and loading guard as main `Navigation.js`.
+
+src/components/Mic/Mic.js
+- `levelInProgress` from `currentLevelAtom` + `playState`; `disableClapTestToggle` on calibration `ClapDetector`; Speech Test button disabled with title; effect forces `micAudioTestMode` off when clap/speech during an in-progress level.
+
+src/components/Playing/ClapDetector.js
+- Optional `disableClapTestToggle` for calibration Clap Test button (disabled + title when a level is in progress).
+
+
+
+NEW FILES
+=========
+
+src/atoms/customLevelFolderNamesAtom.js
+- `atomWithStorage` backed by `storageService`; `getOnInit: true`.
+
+src/constants/defaultLevelPrerequisites.js
+- `PrerequisiteThreshold` labels; `DEFAULT_LEVEL_PREREQUISITES` map for built-in level ids.
+
+src/utils/levelPrerequisitesUtils.js
+- `thresholdLabelForMinRank`, `normalizePrerequisiteRules`, `validateCustomPrerequisiteDAG` (acyclic graph over declared edges).
+
+src/services/levelPrerequisiteService.js
+- `getPrerequisiteRulesForTarget`, `rankMeetsMinimum`, `getBestRankForLevel`, `evaluateLevelQualification` (incl. `displayAsUnknown` / `prerequisiteIsDefault` for UI), `shouldEnforcePrerequisites` (bypass → default profile only), `getLevelsNewlyUnlockedByPrerequisites`.
+
+src/components/Training/LevelPrerequisitesModal.jsx
+- “Missing Requirements” dialog; shows missing levels and required ranks.
+
+
+
+
+
+
+
+
+
+Revision 22 - Further Speak Task Refinements
+===============================================================================
+
+Additional Speak task refinements, which finally make the Speak tasks usable in my opinion. These include:
+    - Using a dash '-' within brackets can indicate that the word is optional. For example, "[boo, blue, -] school" will accept the phrase "boo school", "blue school", or just "school"
+    - A new UI element displays the last 10 unsuccessful utterances. Useful for debugging speech configuration in test tasks, and identifying misses in general.
+    - Fuzzy matching for alternative in brackets words, allowing for a degree of flexibility for near-misses in known areas of difficulty.
+    - Optional endpoint fuzzy matching for the entire spoken segment, which can be enabled per-task in the custom level editor.
+    - General responsivness improvements under the hood to reduce instances of the first words spoken being cut off.
+
+
+
+MODIFIED FILES
+==============
+
+src/hooks/useSpeakRecognitionGate.js
+- Drives `speakPcmFeedAllowedAtom` and `speakRecognitionAllowedAtom` separately: PCM false when a Speak instruction clip exists until overlap/end; match still tied to `taskInstructionVoicePhase === 'ready'` (or 200 ms delay when there is no clip).
+
+src/components/LevelEditor/TaskForm.jsx
+- Speak phrase placeholder and help: document `[word1, word2]` alternative syntax.
+- Speak tasks: checkbox `speakEndpointFuzzy` with help text for looser endpoint-only matching.
+- Speak phrase placeholder and Alternatives help: optional omission via `-` in brackets; `[-]` alone ignored (same phrase without that bracket pair).
+
+src/components/Mic/SpeechDetectionCalibration.js
+- `useSherpaMicTap`: `pcmFeedAllowedRef` (always true) replaces the old combined recognition ref name.
+
+src/hooks/useMicStreamForCalibration.js
+- Comment updated for `pcmFeedAllowedRef`.
+
+src/components/AudioPlayer.js
+- `speakPcmFeedAllowedAtom`; `playVoice(..., { instructionOverlap, signal })`: PCM overlap timer from duration, cleared on end/error/abort; instruction effect uses `AbortController`; `onEnded` / error / `stopVoiceRequest` ensure PCM feed opens when appropriate.
+
+src/hooks/useSherpaMicTap.js
+- Parameter `pcmFeedAllowedRef`: when false, PCM is not fed to Sherpa (decode/match gating is the caller's responsibility).
+
+src/atoms/audioAtom.js
+- New `speakPcmFeedAllowedAtom`; `speakRecognitionAllowedAtom` documented as match/scoring only.
+
+src/services/speakPhraseMatcher.js
+- `compileSpeakSegment` / pattern vs plain compiled matchers; `[a, b, c]` parsing; `hypothesisMatchesCompiled`, `hypothesisMatchesCompiledNorm`, `compiledMightBeBuildingTowardMatch`; `normalizeSpeakBracketLiteral` so literal chunks preserve leading/trailing whitespace from the author string (fixes `] and …` after trim).
+- `phraseMatchesTarget` delegates to compiled path.
+- `levenshtein` export; `matchPatternFrom` fuzzy alternates (exact prefix or token Levenshtein); `hypothesisMatchesCompiledEndpointFuzzy` for optional endpoint pass (boosted alt distance and plain span Levenshtein).
+- Optional word omission: `-` in a bracket list sets `allowsOmission`; bracket containing only `-` is dropped at compile time; plain fallback strips whole `[...]` groups via regex; after omission, next literal matches with leading whitespace flex; `minMatchLen` / `earlyAnchor` adjusted for omission slots.
+- Consecutive alts / omission polish: compile omits empty normalized literals between `]` `[`; `compiledMightBeBuildingTowardMatch` treats length ≥ 8 plus `earlyAnchor` hit, and `earlyAnchor.trim()` so partial text ending at the anchor word still counts; `matchPatternFrom` does not reset omission flex at each alt or on empty literals; fuzzy alt match sets `cursor` to end of hypothesis token only (no extra space skip) so following literals with leading spaces still match; `matchPatternFrom` exported for unit tests.
+
+src/components/Playing/SpeakDetector.js
+- `useMemo` precompiles segments; recognition and early-stable logic use compiled matchers.
+- Subscribes to both PCM and match atoms; `processResultRef(..., allowEndpointFuzzy)`; endpoint retry when `task.speakEndpointFuzzy`; transcript state on each `isEndpoint`; UI strings for instruction vs mic-warming vs listening.
+- Endpoint transcript UI keeps at most the 10 most recent finished utterances (`MAX_DISPLAYED_UTTERANCES`); label notes the limit.
+
+
+
+NEW FILES
+=========
+
+src/constants/speakAudio.js
+- `SPEAK_INSTRUCTION_PCM_OVERLAP_MS` (250 ms before instruction end to open PCM feed).
+
+
+
+
+
+
+
+
+
+Revision 21 -  Speak Task Improvements and AudioPlayer Hotfix
+==================================================================
+
+Speak tasks now support word options in required phrases. Use a comma-separated list in brackets '[]' to sepcify alternative words that may be accepted in place of that word. For example, "It can [suck, duck] the water out" will allow for either "It can suck the water out" or "It can duck the water out" to be accepted. Useful when speech recognition doesn't cooperate.
+Hotfix for an issue where packaged electron builds would see a blank screen when starting the calibration test.
+
+
+
+MODIFIED FILES
+==============
+
+src/components/AudioPlayer.js
+- `preferVoiceHtmlAudioFirst()`: true for `file:` / `app:` document protocols.
+- `playVoice` / `runWithUrl`: shared `playVoiceViaHtmlElement(rejectOnFailure)`; HTML-first when preferred; `audio.onerror` rejects or resolves so HTML-first cannot hang; final HTML fallback; `getAudioFile` `.catch` → `null`.
+- `playSfx`: try/catch around `getAudioFile`.
+- SFX effect: try/catch/finally, `setSfx(0)` in `finally`, `void playAudio()`.
+- Instruction voice effect: try/catch, speak phase reset on error, `void playAudio()`.
+- Feedback effect: try/catch/finally, `setFeedback(0)` in `finally` when not aborted, `void playAudio()`.
+
+
+
+
+
+
+
+
+
+Revision 20 - Profile Naming Prompt Fix, UI Tweak.
+===================================================
+
+Fixed an issue with the electron-packaged app where new profiles could not be created due to the browser's prompt window not working correctly. A custom prompt was added to the profile manager as a workaround.
+Updated initial loading behavior to wait until speech recognition pipeline is ready before showing UI. This may result in longer times in the intial "Loading" state, but prevents significant delays in navigating between tabs on startup.
+Changed the color of the "Save Level" button to blue in the custom level editor.
+
+
+
+
+MODIFIED FILES
+==============
+
+src/App.js
+- Module-level `settleSherpaPreload()`: awaits `preloadSherpaOnnx()`, returns `{ ok, message }` on failure for a fallback user string.
+- Each path to `setLoadingState('ready')` (non-external, external calibration-only, external single-level): `await settleSherpaPreload()` first; on failure set error state and return.
+
+src/components/LevelEditor/LevelEditor.jsx
+- Save Level control: added `button-primary` class with `button` for blue styling consistent with navigation and other primary buttons.
+
+src/components/Achievements/ProfileManager.jsx
+- In-app profile name dialog; `import '../ContentLibrary/ContentLibrary.css'` for shared `.import-dialog*` / `.dialog-header` styling; `react-feather` close control.
+- Split `nameModal` + `draftName` state; confirm/rename/copy logic unchanged aside from reading trimmed `draftName`.
+
+src/components/Version.js
+- Single typo fix in inline style object: `lefy` -> `left` for the fixed version label.
+
+src/constants/stringsreplace.js
+- Achievement string `in_love_with_the_sea` display text capitalization: “In love with the cock” -> “In Love With The Cock”.
+
+
+
+
+
+
+
+
+
+Revision 19 - Profile Management
+=================================
+
+The "Achievements" tab has been updated to the "Profiles" tab. Create new empty profiles or clone existing ones. Each profile tracks stats and achievements independently from each other. Use the included toggle "Track Stats & Achievements" to enable/disable tracking stats outside of gameplay.
+A new CLI parameter "--profile" was added to automatically load a selected profile when running the application externally. Falls back to the default profile when not specified.
+Small tweaks to Endless tasks:
+    - Score values earned from endless tasks now round to the nearest whole point value.
+    - Hold time values now round to the nearest tenth of a second.
+    - Hold time and depth UI does not appear until at least 3 seconds of a continuous hold have passed.
+
+
+
+MODIFIED FILES
+==============
+
+src/atoms/playerAtom.js
+- `playerProfilesAtom` with `atomWithStorage` + custom storage; re-export model helpers; derived atoms for time/dive/session/performance/achievements scoped to resolved active profile; `achievementCheckerAtom` reads derived stats.
+
+src/atoms/taskAtom.js
+- `levelRunGenerationAtom` for idempotent level-completion persistence.
+
+src/index.js
+- Jotai `Provider` with shared `store`; `subscribePlayerProfilesCrossTab` on mount.
+
+src/App.js
+- `--profile` handling: normalize profiles from store, set `activeProfileId` when profile id exists; bump `levelRunGenerationAtom` where level runs start (with Training flow).
+
+src/components/Gameover/Gameover.js
+- Level complete: `computeLevelCompletionUpdate`, single `playerProfilesAtom` merge; respect `statTrackingEnabled`; guard with run generation + processed completion key; imports `playerProfilesAtom`, `normalizePlayerProfilesState`, `getResolvedActiveProfileId`.
+
+src/hooks/useAchievements.js
+- Reads `achievementsStoredAtom`; documents Gameover as sole writer for progress; profile-aware UI updates.
+
+src/components/Achievements/Stats.jsx
+- Per-profile stats display; reset default / delete all profiles / delete all custom content / delete profile flows with countdowns; session lock during play/gameover; confirmation modal for delete-all-custom; `clearAllOtherDestructiveCountdowns`; `runFactoryReset` chains `audioFileService.clearAllAudioFiles`, `storageService.clearAllCustomContent`, `audioManager.clearCustomContentCache`, `audioManager.validateActivePack`, and default `playerProfiles` state.
+
+src/components/Achievements/Achievements.js
+- “Profile Selection” heading; renders `ProfileManager` above stats/achievements grid.
+
+src/components/Navigation.js
+- Achievements nav label: “Profiles”.
+
+src/services/storageService.js
+- `clearAllCustomContent` (custom voice pack / level / background-music localStorage keys only; does not delete `playerProfiles`).
+- `audioFileService.clearAllAudioFiles`: clears every blob in the IndexedDB `audioFiles` store (custom pack + background music files); `Stats` `runFactoryReset` awaits it before `clearAllCustomContent`.
+
+src/services/audioManager.js
+- `validateActivePack` / `clearCustomContentCache`: align in-memory pack state and `activePackIdAtom` with storage after custom content is cleared or on load; revokes object URLs via `audioFileService` when dropping cached pack.
+
+src/services/externalIntegrationService.js
+- `getProfileId()` for CLI `--profile`.
+
+public/electron.js
+- CLI parse: `--profile` option in config.
+
+ExternalDocumentation.txt
+- PROFILE PARAMETERS: `--profile <profileId>` (Electron-only, default fallback, examples); valid combinations and usage examples updated; NOTES bullet for non-Electron ignore behavior.
+
+src/css/index.css
+- `.button.button-danger-outline`; stats confirmation modal layout and dialog title emphasis; profile manager card row styles where present.
+
+src/constants/stringsreplace.js
+- `STR.Stats` additions including delete-all-custom modal title/body and confirm/cancel labels.
+
+src/components/Playing/EndlessDive.js
+- Anchor hold model, grace display, hold depth UI, integration with `GraceStatusBar` and scoring helpers; aligns with Endless summary output in `taskSummary.js`.
+
+src/components/Playing/endlessScoring.js
+- Hold/dive/grace/balls-bonus constants; `HOLD_DEEP_ONE_SCORE_MULT`; `roundHoldSecondsTenth`; tempo/depth/rhythm bonus helpers.
+
+src/components/Tasks/taskSummary.js
+- `generateSummaryENDLESS`: import `SURFACE_PENALTY` and `roundHoldSecondsTenth` from `endlessScoring`; surface penalties use shared constant; `totalTimeHeld` and `holdTimeByDepth` values rounded with `roundHoldSecondsTenth` to match Endless persistence.
+
+src/components/Playing/Playing.js
+- Endless task wiring as needed for updated Endless behavior.
+
+src/components/Training/Training.jsx
+- Increment `levelRunGenerationAtom` when beginning a level run.
+
+
+
+NEW FILES
+=========
+
+src/atoms/playerProfilesModel.js
+- Schema constants, empty factories, `createDefaultPlayerProfilesState`, `normalizePlayerProfilesState`, `getResolvedActiveProfileId`.
+
+src/storage/playerProfilesStorage.js
+- `createPlayerProfilesStorage` for jotai v2 storage API; legacy migration; `subscribePlayerProfilesCrossTab`.
+
+src/utils/levelCompletionPersistence.js
+- Pure `computeLevelCompletionUpdate` (stats + achievements) for Gameover merge.
+
+src/store.js
+- Shared `createStore()` instance for cross-tab sync and non-hook reads.
+
+src/components/Achievements/ProfileManager.jsx
+- Profile list, active selection, create/rename, stat-tracking toggle; session lock.
+
+
+
+
+
+
+
+
+
+Revision 18 - Session Summary Voice, Speech Model Upgrade, Cleanup and Polish
+==============================================================================
+
+Session summary voice selection was overhauled; feedback is no longer bound solely to the "Rank" category. This manifests differently for default and custom levels:
+    - Default levels: when an "END" or "END_*" entry exists in the "Level" audio category, that voice line is used instead of the default Rank categories. This includes Level 1 "Beginner Training", Level 2 "Quick Blow and Go", and Level 4 "Cock Worship 101" (perfect rank only). Levels that were flagged as `soft` still use soft summary lines, where applicable.
+    - Custom levels: a new "Session Summary Voice" section was added under the task list. Per-rank voice lines can now be picked independently from any line used in session summary feedback, with defaults map to the standard "Rank.END_*" categories. An optional "Show Custom Voice Lines" flag can be enabled to use custom voice categories instead, mirroring task custom-voice behavior.
+Speech model ASR bundle was upgraded to a larger, more accurate version. Both models are available in `public/models/sml`(original) and `public/models/lrg`(current, default). Swap between them by copying the respective `asr` and replacing the `public/asr` folder as needed.
+The CLI parameter '--audio-pack' now overrides the level's selected voice pack, provided the CLI's specified audio pack exists. Behavior is now consistent with the background track CLI parameter. 'ExternalDocumentation.txt' was updated accordingly.
+UI polish updates, including:
+    - Level Editor tab: removed "Soft Mode" toggle in level metadata (made redundant with customizable session summary audio).
+    - Level Editor tab: Background Music dropdown shows contextual help text, similar to the Voice Pack dropdown. 
+    - Audio tab: removed duplicate "System Default" mic button (default route remains in the list).
+    - Play tab: Clicking "Begin" now updates the button to show a loading state while level initialization is in progress.
+Bug fixes, including:
+    - Fixed an issue where the first task's voice line was being cut off.
+    - Fixed an issue with level state not clearing properly when navigaing away from the summary tab at the end of a level.
+    - Fixed a linter warning on exhaustive dependencies on 'useSpeakRecognitionGate.js'
+
+
+
+MODIFIED FILES
+==============
+
+src/hooks/useSpeakRecognitionGate.js
+- Phase-reset and speak-allowed effects: dependency arrays use [task, setPhase] and [task, phase, setAllowed, setPhase] instead of task?.id / task?.type fragments.
+
+src/components/Mic/MicInputDevicePicker.js
+- isDefaultLabeledAudioInput (/^Default\b/i) and sortAudioInputsWithDefaultFirst; removed separate "System default" button; useMemo sorted list; useEffect normalizes null atom to default-labeled device id when devices load; selection via selectedId === device.deviceId.
+
+src/atoms/audioAtom.js
+- micInputDeviceIdAtom comment: document legacy null and normalization in MicInputDevicePicker.
+
+src/components/Gameover/Gameover.js
+- Summary: import `getSummaryAudioRef`; `levelDefinition` via `levelManager.getLevel(currentLevel.id)`; `soft` from definition ?? `currentLevel`; `setFeedback` from summary ref instead of rank switch / `AUDIO.Rank`; removed direct `AUDIO` import.
+- Navigation: unmount cleanup stops gameplay mic + clears instruction warmup; `onReturnToMenu` sets `nav` to Training only (session reset in App).
+- Removed unused `setCurrentLevel` after centralizing level clear on leave Gameover.
+
+src/components/Training/levels.js
+- Import `AUDIO`; `BASELINE_SUMMARY_AUDIO` / `SOFT_SUMMARY_AUDIO`; `summaryAudio` on all twelve default levels; begint/quickbg/dive101 overrides as in summary above.
+
+src/components/LevelEditor/LevelEditor.jsx
+- `SummaryAudioEditor` below `TaskBuilder`; `handleSummaryRankChange` / `handleSummaryShowCustomChange`; `summaryAudio` and sparse `summaryAudioShowCustom` on level state; removed Soft Mode checkbox and `soft` from new-level defaults.
+
+src/components/LevelEditor/AudioSelector.jsx
+- Optional `summaryStyle` grid layout (aligned label column, bounded select width, reserved Preview column); optional `summaryExtra` between select and Preview for summary custom-voice checkbox; `maxWidth` differs with vs without `summaryExtra`.
+
+src/components/LevelEditor/taskAudioConfig.js
+- `DEFAULT_LEVEL_SUMMARY_AUDIO_OPTIONS`; `mergeSummaryAudioAllowedOptions`; `buildSummaryAudioRowOptions` (base + optional `getCustomAudioOptions` per rank when `summaryAudioShowCustom[rank]`).
+
+src/App.js
+- import `resolveExternalAudioPackId`; external mode init sets active voice pack via resolver (`getAudioPackId()` + level) instead of level-first / CLI-second.
+- `prevNavRef` + effect: leaving `NAV.GAMEOVER` clears level, play state/time, feedback, music session (immediate), instruction warmup, gameplay mic.
+- Imports: `feedbackAtom`, `playTimeAtom`, `clearMusicPlaybackSession`, `clearInstructionWarmup`, `stopGameplayMic`; `useRef` for nav tracking.
+
+src/components/Training/Training.jsx
+- import `resolveExternalAudioPackId`; `applyAudioPackForLevel` external branch uses same resolver so CLI pack wins when valid.
+
+src/components/AudioPlayer.js
+- Voice: `voiceBufferSourceRef` / `voiceWebGainRef`, `disconnectVoiceWebAudio`; primary path `fetch` + `decodeAudioData` + BufferSource + gain → `ctx.destination`; `resume()` after decode if context not running; HTML fallback on failure; volume effect updates Web Audio gain; stop-voice and unmount disconnect Web Audio voice graph.
+- BGM + first instruction: `settleOutputPipelineAfterMediaElementStart(ctx)` (~150 ms silence after `audio.play()`); `musicStartedPromiseRef` / `createMusicStartedGate` / `resolveMusicStartedGate`; instruction effect awaits gate only for first task when a gate exists; `!url` / effect cleanup / unmount resolve gate and clear ref so voice is never blocked indefinitely.
+
+src/components/Playing/Playing.js
+- import `clearMusicPlaybackSession` from `musicPlaybackSessionStore`; local duplicate removed.
+- `applyMusicPlaybackSessionForLevel`: coalesce atom update when both previous and new `url` are null.
+- `handleBeginPlay`: `beginLoading` state; try/finally; Begin button loading UI (white, "Loading...", disabled, aria-busy).
+
+src/services/gameplayMicSession.js
+- After successful `connectMic`, `await ctx.resume()` if not `running`.
+- ~300 ms silent `AudioBuffer` through `destination` + `onended` wait before marking mic active (output settle after getUserMedia + AEC).
+
+ExternalDocumentation.txt
+- `--audio-pack`: priority order and fallback text aligned with background-music pattern (CLI when pack exists, then level pack, then default).
+
+
+
+NEW FILES
+=========
+
+src/services/summaryAudio.js
+- `getSummaryAudioRef(levelDefinition, newRank, soft)`; rank-to-key map; legacy `Rank.*` + soft for failed/master when no per-rank override.
+
+src/components/LevelEditor/SummaryAudioEditor.jsx
+- Four summary rows with `AudioSelector` (`allowedOptions` from `buildSummaryAudioRowOptions`), per-row Show Custom Voice Lines, help copy for None vs explicit soft Rank lines.
+
+src/utils/externalVoicePackResolver.js
+- `resolveExternalAudioPackId(level, cliPackId)`: CLI pack when `loadPack` succeeds, else level `audioPackId` when pack exists, else null.
+
+src/utils/musicPlaybackSessionStore.js
+- Exported `clearMusicPlaybackSession(immediate)`: clears `musicPlaybackSessionAtom` with optional instant teardown (shared by Playing cancel/complete paths and App Gameover exit).
+
+
+
+
+
+
+
+
+
+Revision 17 - Speech Test, Endless Task Holds, and Bug Fixes
+=============================================================
+
+Added speech recognition test to the Audio tab, under the Clap Calibration section. These tests are mutually exclusive - running the speech test will automatically disable the clap test. Use the speech test to check that speech recognition is working, and see the output for speaking certain phrases; this may be helpful for configuring Speak tasks.
+Reworked parts of the speech detection pipeline to improve readiness, including more preloading of the PCM worklet when possible, and added UI messages to better indicate the current state of the pipeline.
+Adjusted UI of the Audio tab for better organization and readability.
+Partially reverted stricter hold scoring on Endless tasks; after establishing a target depth, you can go one level deeper without cancelling the hold completely, earning 25% of the score of the original depth's rate (similar to time calculations on Hold tasks). Maintain a consistent depth for the most points.
+Added target hold depth to Endless task UI during holds, to align with the previous change for hold scoring.
+Bug fixes for the following issues:
+    - Adjusting the volume of background tracks while the background track test was running no longer causes an uncaught runtime error.
+    - Uploading multiple files on the first try now displays all uploaded files correctly in the Voice Pack Editor.
+    - Hit Depth when target depth = 1 should no longer trigger hitFailed() when target depth is 1, making it consistent with Hold tasks when target depth = 1
+    - Hit.ONE is now selectable as an audio event for Hit Depth tasks in the Custom Level Editor.
+
+
+
+MODIFIED FILES
+==============
+
+src/App.js
+- import audioProcessingService; mount useEffect: preloadSherpaOnnx() + preloadSpeakPcmTapWorklet() with .catch logging; separate useEffect: one-shot pointerdown/keydown (capture) → resumeAudioContextIfSuspended().
+
+src/services/audioProcessingService.js
+- preloadSpeakPcmTapWorklet(): after ensureAudioContext(), addModule(getSpeakPcmTapWorkletUrl()) when not yet loaded; speakPcmTapWorkletPreloadPromise dedupes concurrent callers; speakPcmTapWorkletLoaded shared with speak tap path.
+- resumeAudioContextIfSuspended(): ensureAudioContext + ctx.resume() when suspended.
+- connectMic: after mic → LMS, if isSpeechTapWanted() then void ensureSpeakPcmTapIfWanted().
+- disconnectMic: disconnectSpeakPcmTap() before clearing micSource/micStream.
+- ensureSpeakPcmTapIfWanted(): speech-armed tap; speakPcmTapMicSourceConnected avoids duplicate micSource→tap; port.onmessage → speakPcmChunkHandlerRef + isSpeechTapWanted guard.
+- connectSpeakPcmTap(onChunk): thin wrapper (setSpeechWantsTap + setSpeakPcmChunkHandler + ensureSpeakPcmTapIfWanted).
+
+src/services/speakPcmTapSession.js
+- New: setSpeechWantsTap / isSpeechTapWanted; speakPcmChunkHandlerRef / setSpeakPcmChunkHandler (clap vs speech mutual exclusion).
+
+src/services/sherpaOnnxPreloadService.js
+- warmOnlineStream module state; tryCreateWarmOnlineStream / disposeWarmOnlineStream; warm created after recognizer on successful preload; dispose on preload catch.
+- acquireOnlineStream() / releaseOnlineStream(stream): hand out warm or createStream; release frees and refills warm when recognizer loaded.
+
+src/hooks/useSherpaMicTap.js
+- New: shared Sherpa PCM path via speakPcmTapSession + ensureSpeakPcmTapIfWanted; enabled, resetKey, ref callbacks, optional onReArmedRef; armedRef, silenceMsRef.
+- waitForMicReady; Promise.all([ensureAudioContext, getSherpaOnnxReadyPromise]) with parallel mic waiter; acquireOnlineStream / releaseOnlineStream (sherpaOnnxPreloadService owns stream.free).
+- Two effects: [enabled] arms speech tap; [enabled, resetKey] stream + chunk handler (PCM tap may persist across resetKey).
+- pcmReceived / speechPipelineLive for UI: first PCM at handler; first successful acceptWaveform+decode after gating.
+
+src/components/Playing/SpeakDetector.js
+- Gate ref: useRef(speakAllowed) + allowedRef.current each render; removed useEffect sync so mic chunks are not dropped after speakAllowed turns true; useSherpaMicTap; scoring / r.reset in onAfterDecodeRef + processResultRef.
+- Staged help: waiting for mic audio → starting recognizer → listening for phrase (when speakAllowed + model ready).
+
+src/components/Mic/SpeechDetectionCalibration.js
+- Transcript UI + useMicStreamForCalibration + useSherpaMicTap.
+- Staged help for speech test: PCM → decode → listening.
+
+src/components/Playing/endlessScoring.js
+- HOLD_DEEP_ONE_SCORE_MULT (0.25): one level deeper than the Endless hold anchor scores at this fraction of the anchor depth rate (matches Hold task DEEP_ONE effective-time behavior).
+
+src/components/Playing/EndlessDive.js
+- Anchor hold model: arming timer, per-frame accumulation, commit on shallower/surface, abort on anchor+2; holdDepthDisplay / hold line UI; throttled hold timer state; dive-only scoring on motion.dir === 'up'; conditional clap clear on dive; holdSegmentState save/restore for pause.
+
+src/atoms/markersAtoms.js
+- `micAudioTestModeAtom`, custom storage with legacy migration and invalid-value normalization to `off`; removed `clapTestEnabledAtom`.
+
+src/components/AudioPlayer.js
+- musicVolume useEffect: resolve ctx as gainNode.context || g.context (g = gainNode.gain); early return if !ctx before cancelScheduledValues / setValueAtTime / linearRampToValueAtTime.
+
+src/components/Mic/Mic.js
+- Speech test toggle; conditional `SpeechDetectionCalibration`; help text.
+- Import `./Mic.css`; Audio tab section spacing via `mic-audio-section` on speech / Background Track / Volume blocks; ClapDetector wrapped in `div.mic-audio-section`; removed `margin-y-top` / `margin-y margin-y-top` where sibling rule supplies gap.
+
+src/components/Mic/MicInputDevicePicker.js
+- Root wrapper adds `mic-audio-section` so it participates in Audio tab vertical spacing between h3-led blocks.
+
+src/components/Playing/ClapDetector.js
+- `micAudioTestModeAtom`; mic on when mode is `clap` in calibration.
+
+src/components/Playing/HitDepth.js
+- Hit state machine: run `AT_DEPTH` + `depthDifference === -1` reset before surface → `hitFailed()` so target depth 1 can reset at the surface without a false fail.
+
+src/hooks/useMicStreamForCalibration.js
+- New: getUserMedia + connectMic for Mic speech calibration.
+
+src/components/AudioPackEditor/AudioCategoryEditor.jsx
+- `handleFileUploaded` / `handleDeleteFile`: apply changes with `onUpdate((prev) => ...)` and immutable category merges so rapid multi-file uploads see latest state.
+
+src/components/AudioPackEditor/AudioPackEditor.jsx
+- `handleUpdateAudioFiles`: `setPack((prev) => ({ ...prev, audioFiles: updater(prev.audioFiles) }))` instead of closing over `pack`.
+
+src/components/LevelEditor/taskAudioConfig.js
+- HIT_AUDIO: added Hit.ONE option for Hit Depth tasks (matches Hit.TWO–FOUR and depth-1 default audio).
+
+
+
+NEW FILES
+=========
+
+src/components/Mic/Mic.css
+- `.mic-calibration > .mic-audio-section + .mic-audio-section { margin-top: 4.5rem }` for space between consecutive Audio tab blocks (now led by an h3).
+
+
+
+
+
+
+
+
+
+Revision 16 - Speak Task
+===================================================
+
+New task type for custom levels: "Speak". Configure short, repeating phrases, or longer statements broken down by sentences. Say what you're told to say in order to progress. Mileage may vary with speech recognition.
+Audio configuration now allows for selecting external audio inputs, not just the default system microphone. Recommend a webcam microphone for the "Speak" task, especially when used with background tracks (speech recognition becomes unusable on the system microphone when background tracks are playing).
+
+
+
+MODIFIED FILES
+==============
+
+src/App.js
+- preloadSherpaOnnx() on load.
+
+src/atoms/audioAtom.js
+- taskInstructionVoicePhaseAtom, speakRecognitionAllowedAtom; micInputDeviceIdAtom (atomWithStorage, getOnInit).
+
+src/components/AudioPlayer.js
+- Speak task instruction effect sets taskInstructionVoicePhase (playing → cooldown → ready); feedback effect guards for Speak / instruction playing.
+
+src/services/audioProcessingService.js
+- connectSpeakPcmTap / disconnectSpeakPcmTap: mic → speak-pcm-tap worklet; speakPcmTapNode/Gain/WorkletLoaded naming; import getSpeakPcmTapWorkletUrl from asrAssetUrls.
+
+src/services/gameplayMicSession.js
+- getUserMedia audio: buildMicAudioConstraints(store.get(micInputDeviceIdAtom)).
+
+src/hooks/useClapDetection.js
+- buildMicAudioConstraints(micInputDeviceId); effect deps include micInputDeviceId for device changes (own mic path).
+
+src/components/Playing/Playing.js
+- useSpeakRecognitionGate; SpeakDetector branch; calculateSpeakTimeLimit for timer prop.
+
+src/components/Playing/CountdownTimer.js
+- TaskType.SPEAK default time limit via calculateSpeakTimeLimit when timeLimit unset.
+
+src/components/Playing/SpeakDetector.js
+- sherpa getSherpaOnnxReadyPromise, OnlineRecognizer/OnlineStream, PCM tap, phrase match + optional early accept, progress state, SFX TICK/TOCK rules, model error copy for public/asr/.
+
+src/components/Playing/SpeakDetector.css
+- Larger typography for Speak panel; .speak-detector-help for task helpText.
+
+src/components/Mic/Mic.js
+- MicInputDevicePicker below help text, above ClapDetector.
+
+src/components/Tasks/task.js
+- TaskType.SPEAK, SpeakMode SHORT/LONG; calculateSpeakTimeLimit, createSpeakTask, defaults.
+
+src/components/Tasks/taskSummary.js
+- generateSummarySPEAK.
+
+src/components/Tasks/taskAudioConfig.js
+- Speak audio options for level editor.
+
+src/components/LevelEditor/TaskForm.jsx
+- Speak task fields: phrase, speakMode, helpText, repeat, timeLimit, audio, etc.
+
+src/components/LevelEditor/TaskBuilder.jsx
+- + Speak button; defaults for phrase, speakMode, timeLimit, audio when adding SPEAK.
+
+src/components/Cylinder/TaskInstructions.jsx
+- TaskType.SPEAK instruction copy.
+
+src/components/Training/scores.js
+- calcPerfectSpeakScore / calcPassSpeakScore; POINTS_PER_SPEAK_UNIT; splitSpeakSegments for long mode.
+
+src/components/Training/ScorePreview.js
+- TaskType.SPEAK score preview; sample Speak task in demo list.
+
+src/components/Gameover/Gameover.js
+- Perfect/pass totals and summary line for TaskType.SPEAK.
+
+src/services/levelDifficultyService.js
+- TASK_TYPES.SPEAK; perfect score uses calcPerfectSpeakScore.
+
+
+
+NEW FILES
+=========
+
+src/services/sherpaOnnxPreloadService.js
+- Sequential load of public/asr/ sherpa-onnx scripts; Module.locateFile; singleton getSherpaOnnxReadyPromise / isSherpaOnnxReady.
+
+src/utils/asrAssetUrls.js
+- getPublicBaseUrlWithPath, getSherpaAsrAssetBaseUrl, getSherpaAsrScriptUrl, getSpeakPcmTapWorkletUrl.
+
+public/speak-pcm-tap.js
+- AudioWorklet: resample to 16k mono, ~30ms chunks, postMessage pcm+rms; registerProcessor('speak-pcm-tap').
+
+src/services/speakPhraseMatcher.js
+- normalizeSpeakText, phraseMatchesTarget for Speak scoring.
+
+src/services/speakSentenceSplit.js
+- splitSpeakSegments for long-mode phrases.
+
+src/utils/micCaptureConstraints.js
+- MIC_CAPTURE_AUDIO_CONSTRAINTS, buildMicAudioConstraints(deviceId).
+
+src/components/Mic/MicInputDevicePicker.js
+- enumerateDevices audioinput; System default + per-device buttons; u-audio-input-selected utility styling.
+
+src/components/Mic/MicInputDevicePicker.css
+- .u-audio-input-selected (primary-style fill for selected input).
+
+src/hooks/useSpeakRecognitionGate.js
+- Gates speakRecognitionAllowedAtom until after Speak instruction audio (or short delay without clip).
+
+public/asr/
+- sherpa-onnx-asr.js, sherpa-onnx-wasm-main-asr.js, app-asr.js, index.html; runtime also loads .wasm / .data / model files from same base URL per sherpa-onnx layout.
+
+
+
+
+
+
+
+
+
+Revision 15 - Background Music
+===================================================
+
+Background music: you can now play background music during levels. 
+    - Import/manage background tracks in Content Library.
+    - Tune background audio on a separate channel from SFX and Voice lines, adjust fade in/out options, and test levels compared to SFX and Voice.
+    - New optional CLI input option "--background-music" to overwrite background music when launching via CLI.
+    - Custom levels can be configured to override background tracks - useful to avoid repeated configuration or specifying when launching a level via CLI. The option "Use selected audio" will default to the content library's selected background, while "None" manually disables background music for that level. (Note; if specified, "--background-music" parameter will override level-configured music).
+Renamed many references of "Audio Pack" to "Voice Pack" to distinguish them from background audio.
+Clap detection was overhauled to use AudioWorklet LMS to filter out background music, improving clap detection reliability when background music is playing. This also sets the groundwork for a planned future feature.
+    - NOTE: The microphone is now enabled throughout the level, not just during "Clap" and "HoldAndClap" tasks, for smoothness with background tracks. The actual behavior of these tasks is unaffected.
+Additional "Clap Test On/Off" button in the "Calibrate Clap Detection" section of the "Audio Tab"
+Updated "Balls region" grids to use the same "Buffer" value as shaft depth calculations (originally left out by choice, but this made balls coverage too unreliable in practice)
+Corrected a couple of typos throughout UI.
+Fixed long-standing bug in session summary section, where achievements were listed as newly unlocked when they had already been earned.
+
+
+
+MODIFIED FILES
+==============
+
+src/atoms/audioAtom.js
+- musicVolumeAtom, musicFadeInEnabledAtom, musicFadeInDurationAtom, musicFadeOutEnabledAtom, musicFadeOutDurationAtom.
+- activeBackgroundTrackIdAtom (persisted) for Content Library selection; atomWithStorage options `{ getOnInit: true }` so persisted id is loaded before first component subscribes (fixes Test Background Track / level music without opening Content Library first).
+- musicPlaybackSessionAtom (url, generation, stopFade) drives AudioPlayer.
+
+src/atoms/playerAtom.js
+- achievementsStoredAtom: fourth argument to atomWithStorage `{ getOnInit: true }` so persisted achievement unlocks and progress load before first subscribe (avoids empty default on first completion after app load).
+
+src/atoms/markersAtoms.js
+- clapTestEnabledAtom (atomWithStorage, key clapTestEnabled): Mic tab clap test mic on/off; gameplay clap detection ignores this (see ClapDetector); default false until user enables Clap Test.
+
+src/services/storageService.js
+- BACKGROUND_MUSIC_TRACKS, ACTIVE_BACKGROUND_MUSIC in STORAGE_KEYS.
+- getAllBackgroundTracks, saveBackgroundTrack, deleteBackgroundTrackMeta.
+- audioFileService.deleteBackgroundMusicTrackFiles (IndexedDB bg-music pack).
+- setActiveBackgroundMusic / getActiveBackgroundMusic: legacy helpers (same localStorage key as activeBackgroundTrackIdAtom); active id is not written from musicTrackManager.setActiveTrack (atomWithStorage is sole writer).
+
+src/components/ContentLibrary/ContentLibrary.jsx
+- Background Tracks section with MusicTrackCard, Import Track, MusicTrackImportDialog.
+- Voice Packs heading above voice pack grid; Background Tracks heading for music.
+- handleMusicImportSuccess, handleDeleteMusicTrack.
+
+src/components/AudioPlayer.js
+- Music channel: musicAudioRef, musicGainRef; musicPlaybackSessionAtom, musicVolumeAtom, fade atoms.
+- Fade in/out logic; connectMusicReference for LMS routing; teardown on session clear.
+- fadeOutThenTeardown: clear overlapping fade timeout/promise and disconnect before starting another fade; avoids stacked fades when session changes quickly.
+
+src/components/Mic/Mic.js
+- Volume Settings: SFX, Voice, Music. Background Track Settings: Fade In/Out checkboxes, Duration (s) NumberControls; Test Background Music row above Test Voice / Test SFX.
+- Test Voice / Test SFX: cyclical Calibration.* and Sfx.* via feedbackAtom/sfxAtom; button labels show next key (useState indices); resolves active voice pack like gameplay.
+
+src/components/LevelEditor/LevelEditor.jsx
+- backgroundMusicId state; Background Music dropdown (None / use selected library track / per-track); save/load/import backgroundMusicId.
+- Help text for custom levels added.
+
+src/components/Playing/Playing.js
+- resolveBackgroundMusicTrack(merged, { cliTrackId }) for level start; musicPlaybackSessionAtom set with url/generation; audioProcessingService.ensureAudioContext.
+- gameplayMicSession: startGameplayMic / stopGameplayMic / scheduleStopGameplayMic on unmount (fade-aligned delay when fade-out enabled); mic before music in handleBeginPlay and headless start; clearMusicPlaybackSession(immediate) on cancel; stopGameplayMic on cancel.
+
+src/components/Training/Training.jsx
+- backgroundMusicId merged into level; musicPlaybackSessionAtom cleared on unmount/navigation.
+
+src/App.js
+- backgroundMusicId passed into Playing merge.
+
+src/services/audioProcessingService.js
+- connectMusicReference(audioElement, gainNode): MediaElementSource → gain → destination + lmsNode input 1.
+- disconnectMusicReference; musicConnections tracking.
+- getMicConnected(); connectMic throws if AudioContext/LMS not ready after ensureAudioContext.
+
+src/services/externalIntegrationService.js
+- getBackgroundMusicId() returning cliConfigCache?.backgroundMusic for CLI override.
+
+public/electron.js
+- config.backgroundMusic; --background-music <trackId> parsing.
+
+src/css/skeleton-light.css
+- .mic-duration-number-control-scale (transform scale 0.88).
+- .mic-fade-checkbox-label (padding-top align with number row).
+
+src/hooks/useClapDetection.js
+- Shares audioProcessingService AudioContext/LMS graph; connectMic/disconnectMic; analyser tap post echo reduction.
+- Optional third argument micEnabled (default true): when false, no getUserMedia, disconnectMic, zeroed freq data; canvas shows threshold line only.
+- Fourth argument micLifecycle: "own" (calibration — full mic lifecycle) vs "gameplay" (shared gameplayMicSession — no disconnectMic on hook unmount; analyser-only loop).
+- Cancellable init: cancelled flag + AbortController on getUserMedia; no late connectMic after cleanup.
+
+src/hooks/useAchievements.js
+- Reads achievement state via `store.get(achievementsStoredAtom)` (imported `store` from `src/store.js`, same as root Provider) for `isUnlocked`, `getProgress`, and `unlockAchievement` guards so one Gameover effect tick sees persisted unlocks; `updateProgress` uses functional `setAchievementsStored` only (skip when already unlocked); `unlockAchievement` applies unlock with `store.set` and appends `newlyUnlocked` only when the id was not already present; `useSetAtom` instead of `useAtom` (value unused).
+
+src/components/Playing/ClapDetector.js
+- Calibration UI: Clap Test On/Off (button-primary when on); clapTestEnabledAtom; frequency "—" when mic off; micEnabledForClap = !isCalibration || clapTestEnabled so gameplay always uses mic.
+- Passes micLifecycle "gameplay" vs "own" to useClapDetection.
+
+src/components/Playing/HoldAndClapDetector.js
+- micLifecycle "gameplay" for useClapDetection.
+
+public/lms-processor.js
+- NLMS AudioWorklet: input 0 mic, input 1 music reference; echo-cancelled output to analyser (clap detection).
+
+src/atoms/gridAtoms.js
+- ballsCoveredStateAtom (writable) for hysteretic balls-covered state; ballsCoveredAtom derives from it when hasBallsGrids.
+
+src/hooks/useGridProcessor.js
+- Balls region buffer hysteresis using percentHysterisisAtom (same as shaft depth); updates ballsCoveredStateAtom via store.get/set.
+
+src/components/Playing/EndlessDive.js
+- ballsCovered from ballsCoveredAtom instead of inline combinedBallsPercent < ballsDepthPercent.
+- micLifecycle "gameplay" for useClapDetection.
+
+src/components/Playing/RestBallsBonus.js
+- ballsCovered from ballsCoveredAtom instead of inline combinedBallsPercent < ballsDepthPercent.
+
+src/components/Calibration/CalibrationTester.js
+- ballsCovered from ballsCoveredAtom for feedback and display; removed unused grids/hasBallsGrids.
+
+
+
+NEW FILES
+=========
+
+src/components/ContentLibrary/MusicTrackCard.jsx
+- Card component for background track display and actions.
+
+src/components/ContentLibrary/MusicTrackImportDialog.jsx
+- Modal for importing a single music track file.
+
+src/services/musicTrackManager.js
+- Service for background track storage (IndexedDB bg-music); import/delete; active selection via activeBackgroundTrackIdAtom.
+- Follow-up: getActiveTrackId() uses store.get(activeBackgroundTrackIdAtom); setActiveTrack(id) only store.set(activeBackgroundTrackIdAtom, id) — single writer (atomWithStorage), removed duplicate storageService.setActiveBackgroundMusic to fix localStorage serialization clash on active_bg_music_id.
+
+src/utils/backgroundMusicResolver.js
+- New module: resolveBackgroundMusicTrack(level, { cliTrackId }); resolveLibraryActive helper.
+- levelManager.isDefaultLevel: default levels use CLI track if valid else null when CLI set; without CLI use Content Library active track only; custom levels use CLI override when valid else level id (concrete, use_selected, or none → null); removed prior empty backgroundMusicId → library fallback.
+
+src/services/gameplayMicSession.js
+- Single gameplay mic lifecycle: startGameplayMic, stopGameplayMic, scheduleStopGameplayMic (deferred stop for fade alignment), isGameplayMicActive; coordinates with audioProcessingService connectMic/disconnectMic and opId for in-flight start abort.
+
+
+
+
+
+
+
+
+
+Revision 14 - Custom Audio Categories, UI Cleanup
+===================================================
+
+Added new audio category "Custom" with 20 configurable sub-categories. Each sub-category can be given its own display name for readability in the Custom Level Editor window.
+Added "Show Custom Voice Lines" checkbox to tasks in the Custom Level Editor window, disabled by default. When checked, shows all custom audio subcategories by display name. A custom audio subcategory with no files is never displayed in the dropdown menu, to reduce clutter.
+Various UI cleanup and reorganization in the Custom Level Editor, including:
+    - Removed "Rest Ball" task type from task selection in the Custom Level Editor window; this was leftover from Revision 13. All "Rest Ball" tasks should be treated as "Rest" tasks.
+    - "Get Ready" and "Finish" tasks now have only one "Time" field.
+    - "Rest" time limit was renamed "Time" for consistency.
+    - "Hit Depth" and "Clap" tasks now have auto-calculated time limits for consistency with "Hold" and "Hold and Clap" tasks.
+Recategorized "Rest" as a task assignment category in the Audio Pack Editor window.
+Moved "Calibration.Ball" to the bottom of the Calibration section.
+
+
+
+MODIFIED FILES
+==============
+
+src/components/AudioPackEditor/AudioCategoryEditor.jsx
+- Added customNames and onCustomNamesUpdate props for Custom category display name overrides.
+- Display name input for Custom subcategories (placeholder: "Display name for Custom.N").
+- Labels show only key (e.g. "Custom2:") without custom name in parentheses.
+
+src/components/AudioPackEditor/AudioPackEditor.jsx
+- Added customNames state and handleUpdateCustomNames; handleNewPack includes customNames: {}.
+- Added Custom category group (heading "Custom", categories: ['Custom']).
+- Pass customNames and onCustomNamesUpdate to AudioCategoryEditor when category === 'Custom'.
+- Moved Rest audio category from Performance section to Task Assignment section, above HoldAndClap.
+
+src/components/LevelEditor/AudioSelector.jsx
+- When building options from pack: Custom category uses CUSTOM_KEYS (Custom1–Custom20) instead of Object.keys.
+- hasFiles check for Custom entries (Array or single value).
+- Custom option labels use customNames when available.
+
+src/components/LevelEditor/TaskBuilder.jsx
+- New tasks default showCustomVoiceLines: false.
+- Removed REST_BALL from task type defaults.
+- Get Ready and Finish: removed time from new task defaults; only timeLimit used.
+- Hit Depth and Clap: new tasks use calculated timeLimit (calculateHitDepthTimeLimit, calculateClapTimeLimit).
+
+src/components/LevelEditor/TaskForm.jsx
+- Get Ready and Finish: removed redundant "Time" field; single "Time" field (stored as timeLimit) with min 1.
+- Get Ready, Rest, Finish: renamed "Time Limit" label to "Time".
+- Hit Depth: auto-calculate timeLimit when repeat or task type changes (10 + repeat * 7); removed "Leave at 0 for Auto" hint.
+- Clap: auto-calculate timeLimit when repeat or task type changes (10 + repeat * 4).
+- "Show Custom Voice Lines" checkbox; when enabled, Custom.* options appear in Audio dropdown.
+- Pack loading: use packId ?? audioManager.getActivePackId() for fresh load from localStorage (fixes stale active pack).
+- Checkbox styling: compact vertical margins, aligned with Audio dropdown (marginLeft: 2rem).
+- Endless score events: scoreEventSoundOptions includes getCustomAudioOptions when showCustomVoiceLines enabled.
+- Removed Rest Ball from task type dropdown; backward compat for 'rest ball' in form fields and select value.
+
+src/components/LevelEditor/taskAudioConfig.js
+- getCustomAudioOptions(audioPackId, customNames): loads pack via packId ?? audioManager.getActivePackId() for fresh data.
+- getAudioOptionsForTaskType(taskType, showCustomVoiceLines, audioPackId, customNames): when showCustomVoiceLines true, appends getCustomAudioOptions to base options.
+- getAudioOptionsForTaskType: 'rest ball' case retained for backward compat with existing custom levels.
+
+src/components/Cylinder/Cylinder.jsx
+- Removed REST_BALL task type; REST only. Backward compat: 'rest ball' string handled for existing levels.
+
+src/components/Cylinder/TaskInstructions.jsx
+- Removed REST_BALL case; 'rest ball' falls through to REST for backward compatability.
+
+src/components/Playing/Playing.js
+- Removed REST_BALL from task type checks; backward compat for 'rest ball' in CountdownTimer and RestBallsBonus.
+- Clap: pass effective timeLimit to ClapDetector (calculateClapTimeLimit fallback when timeLimit 0/missing).
+
+src/components/Playing/CurrentShaft.js
+- Removed REST_BALL; backward compat for 'rest ball' in showBallsMode.
+
+src/components/Webcam/WebcamDisplay.js
+- Removed REST_BALL; backward compat for 'rest ball' in ballsBonusActive.
+
+src/components/Tasks/audio.js
+- Calibration: moved BALL subcategory to appear underneath FOUR in Audio Pack Editor.
+
+src/components/Tasks/task.js
+- Removed REST_BALL from TaskType enum.
+- createRESTTask: always creates REST; removed useBall option.
+- generateRandomTask: removed REST_BALL from task types.
+- getTaskSummary: REST only; 'rest ball' case for backward compat.
+- Added calculateHitDepthTimeLimit(repeat) = 10 + repeat * 7; calculateClapTimeLimit(repeat) = 10 + repeat * 4.
+- calculateLevelDuration: fallback for HITDEPTH and CLAP when timeLimit 0/missing.
+
+src/components/Playing/HitDepth.js
+- Hit Depth: effectiveTimeLimit fallback (calculateHitDepthTimeLimit) when timeLimit 0/missing.
+
+src/components/Playing/CountdownTimer.js
+- Hit Depth and Clap: timerDuration fallback when timeLimit 0/missing; hasDuration for display.
+
+src/constants/stringsreplace.js
+- Removed REST_BALL from STR.Task.
+
+src/services/audioManager.js
+- Export: customNames in pack manifest.
+- Import: customNames from manifest.pack; validation allows Custom keys Custom1–Custom20.
+- Added getActivePackId() returning storageService.getActiveAudioPack() for fresh pack ID read.
+
+
+
+
+
+
+
+
+
+Revision 13 - Balls Grid Feature 
+===================================================
+
+New 'Balls Grid' feature: Set a grid to cover the 'balls' region. This allows for bonus points to be earned during rest by covering a percentage of the 'balls' grid, but only if the rest task is configured to allow this. Disabled by default, unused in default levels - create custom levels to use this function. Instructions and calibration screen have been tweaked accordingly.
+Updated Endless tasks; balls bonus is enabled when a balls grid is configured, holds are calculated more strictly.
+Small tweak to set grid calibration view to "All Grids" automatically when starting a level, ensuring that all grids are active during gameplay.
+Version incrementation now includes revision number.
+
+
+
+MODIFIED FILES
+==============
+
+src/App.js
+- Auto-switch to "All Grids" when nav becomes PLAYING and multiple grids exist (selectedGridIdAtom = null).
+
+src/components/Calibration/GridSelector.jsx
+- Balls region checkbox inline with Grid Name; grid name input width 100px; flex layout with marginLeft auto for checkbox.
+
+src/components/Cylinder/Cylinder.jsx
+- REST/REST_BALL: sectionBelow red only when ballsBonus and hasBallsGrids.
+- ENDLESS: sectionBelow red when hasBallsGrids, ballsCovered, and currentDepth === 0 (earning balls bonus).
+- Import ballsCoveredAtom.
+
+src/components/Playing/CurrentShaft.js
+- When Rest+ballsBonus+balls grid: show "Balls%" (combinedBallsPercent) and "Balls On" (0/1) instead of Dildo%/Suck Depth.
+
+src/components/Playing/Playing.js
+- RestBallsBonus rendered only when hasBallsGrids; import gridsAtom, useAtomValue.
+
+src/components/Playing/EndlessDive.js
+- Balls bonus: only when ballsCovered and at surface (currentStateRef); add balls bonus entries to allScores (lastIntervalsCompletedRef); include ballsBonus in newTotals on hold/dive completion.
+- Hold timer: reset holdStartTimeRef, lastIncrementTimeRef, setTimeHold(0) when diveState.current > diveState.previous (increasing depth).
+- Import currentStateAtom; currentStateRef for interval closure.
+
+src/hooks/useGridProcessor.js
+- Freeze depth at 0 when Endless+hasBallsGrids+ballsCovered+currentState===0; import currentLevelAtom, gridsAtom, combinedBallsPercentAtom, ballsDepthPercentAtom, TaskType.
+
+
+
+NEW FILES
+=========
+
+src/components/Playing/RestBallsBonus.js
+- Rest task balls bonus component: score feed, time limit, balls bonus accumulation when balls covered and at surface; SFX TICK/TOCK on balls transition.
+
+
+
+
+
+
+
+
+
+Revision 12 - Custom Level Editor Loading Tweaks, Back-End Audio Improvements
+=============================================================================
+
+The "Load Existing Level" dropdown in the Custom Level Editor now sorts custom levels by level number (order) instead of level ID.
+Audio references migrated from resolved path arrays to Category.KEY strings; eliminates brittle reverse lookup for default levels. 
+Audio resolution encapsulated entirely within audioManager; fallbackPack and activeCustomPack are never passed as parameters from external callers.
+
+
+
+MODIFIED FILES
+==============
+
+src/components/LevelEditor/AudioSelector.jsx
+- Removed direct import of getAudioFile from audioResolver.
+- handlePreview now uses audioManager.getAudioFileForPack(value, audioPackId); custom-content URL resolution handled by audioManager.
+
+src/components/LevelEditor/LevelEditor.jsx
+- Sort getCustomLevels() by order in useEffect (initial load) and handleSave (refresh after save).
+
+src/components/Tasks/task.js
+- createTask helpers: store audio as Category.KEY strings instead of AUDIO.X.Y resolved values.
+
+src/components/Training/levels.js
+- Replaced all AUDIO.X.Y with 'X.Y' string keys; removed AUDIO import.
+
+src/services/audioManager.js
+- Added internal wrappers: resolveWithContext, getAudioFileWithContext, getAudioFileWithPacks, getAudioKeyWithContext (call resolver with activeCustomPack/fallbackPack from closure).
+- Added resolveCustomContentUrls helper; shared by getAudioFile and getAudioFileForPack.
+- getAudio, getAudioFileSync, getAudioFile, getAudioKey now call internal wrappers instead of resolver directly.
+- Added getAudioFileForPack(audioRef, packId) for level-specific preview; primary = specified pack, fallback = activeCustomPack.
+
+src/services/audioResolver.js
+- getAudioKey: return string as-is when input is already Category.KEY format.
+
+
+
+
+
+
+
+
+
+Revision 11 - Custom Level Editor Improvements, Endless Task Changes, Mirror Mode, Bug Fixes
+============================================================================================
+
+Added several quality-of-life features to the custom level editor; a second task addition bar at the bottom of the task list, task numbers, reordering score events in endless tasks, fast-flow into next task, and level difficulty overrides.
+Completely reworked the Endless task; grace period time has been significantly increased, UI element now shows grace period time, score log is limited to last 5 events, endless task state persists when pausing the level.
+Mirror mode implemented; when toggled on, flips the screen while level is active. Use this when facing a mirror to read the UI without turning around.
+Bug fixes:
+    - Suppressed feedback audio while task instruction is playing; instruction is no longer cut off when starting a new task at the incorrect depth / tempo.
+    - Depth changes are now processed even if the webcam screen is out of view.
+    - Fixed duplicate score events artificially inflating score gains in the "UpAndDown" task. 
+
+
+
+MODIFIED FILES
+==============
+
+src/atoms/audioAtom.js
+- Added stopVoiceRequestAtom (counter) to request voice channel stop when suppressFeedback transitions.
+
+src/components/AudioPlayer.js
+- Added instructionPlayingRef to track when task instruction audio is playing.
+- Extended playVoice to accept optional onEnded callback, invoked when audio finishes.
+- Task instruction effect sets instructionPlayingRef true before play, passes onEnded to clear it, and clears in cleanup.
+- Feedback effect guards: if instruction is playing, clears feedback atom and returns without playing.
+- Added stopVoiceRequestAtom subscription; effect stops voice and clears feedback when stopVoiceRequest increments.
+- Extended playVoice to accept optional signal (AbortSignal); abort handler stops playback immediately.
+- playVoice now returns Promise resolving when audio ends (or on abort); enables proper feedback effect sequencing.
+- Feedback effect uses AbortController; cleanup aborts to stop in-flight playback when feedback cleared.
+
+src/components/LevelEditor/LevelEditor.jsx
+- Import levelDifficultyService.
+- Added difficulty override section: display computed difficulty, checkbox "Override difficulty", conditional NumberControl (1–11, step 0.5) when checked.
+
+src/components/LevelEditor/TaskBuilder.jsx
+- Extracted addTaskBar into reusable block; duplicate add bar at bottom of task list ("Add another task" / "Tasks" heading).
+- Pass taskNumber={index + 1} to TaskForm.
+- New tasks default suppressFeedback: false.
+
+src/components/LevelEditor/TaskForm.jsx
+- Added taskNumber prop; display #N in header when provided.
+- Added moveScoreEvent helper; up/down reorder buttons for endless task score events.
+- Added "Skip feedback (fast transition)" checkbox; updates task.suppressFeedback.
+
+src/components/Playing/Playing.js
+- gotoNextTask: endlessGrace, endlessScores undefined in both branches.
+- Import stopVoiceRequestAtom; gotoNextTask accepts options { stopVoiceFirst }; when true, increments stopVoiceRequest before advancing.
+- onTaskOver: check completedTask.suppressFeedback; if true, gotoNextTask({ stopVoiceFirst: true }) immediately; else setFeedback and setTimeout 2000ms.
+- setFeedback(0) in gotoNextTask only when stopVoiceFirst; normal path lets feedback play to completion.
+
+src/services/levelDifficultyService.js
+- Custom levels: when useDifficultyOverride and difficultyOverride valid (1–11), return override instead of computed.
+- Override validation: 11 returns 11; 10.5 (or 10 < v < 11) clamps to 10; 1–10 half-step rounded.
+
+src/components/Playing/Diving.js
+- Added lastProcessedMotionRef deduplication guard in RATE & ERRORS effect to prevent duplicate score entries when provideFeedback/adjustVibration cause effect re-runs.
+- Reset guard when motion.dir === 'down' (new dive) and on task setup.
+
+src/components/Playing/EndlessDive.js
+- Grace period decay interval: tempGraceRef decay now guarded by hasStartedRef.current.
+- Grace period decay interval: gracePeriodRef decay condition now includes hasStartedRef.current.
+- Hold grace: multiplied by DEPTH_GRACE_FACTOR based on hold depth.
+- Dive grace: multiplied by DEPTH_GRACE_FACTOR based on dive end depth.
+- Dive grace: rhythmBonusRef and depthBonusRef multipliers (1 + rhythmMult) × (1 + depthMult).
+- Grace persistence: restore from endlessGrace on mount, persist on unmount; restore hasStarted when resuming.
+- Score feed: restrict to last 5; persist endlessScores (allScores, totals, refs) on unmount, restore on mount.
+- Removed Current State/Depth; added "Rest Time:" label above grace bar.
+
+src/components/Playing/endlessScoring.js
+- GRACE_RATE renamed to HOLD_GRACE_RATE (1).
+- Added DIVE_GRACE_RATE (0.5).
+- GRACE_MAX increased from 20 to 30.
+- Added DEPTH_GRACE_FACTOR { 1: 0.5, 2: 1.0, 3: 2.0, 4: 3.0 } for grace depth bonuses.
+- RHYTHM_BONUS_MAX and DEPTH_BONUS_MAX increased to 0.75.
+
+src/components/Cylinder/Cylinder.jsx
+- TaskType.ENDLESS: color sections 1–currentDepth from currentStateAtom; colPrimary for reached coverage.
+- Mirror mode: removed local mirror state; added MirrorToggle next to arrows button; mirror transform applied by App.js wrapper.
+
+src/App.js
+- Mirror mode: import MirrorToggle, mirrorModeAtom, effectiveMirrorAtom; initialize mirror from CLI (config?.mirror) before external mode check.
+- Camera area, Cylinder, HeadlessWrapper wrapped with transform: scaleX(-1) when effectiveMirror; MirrorToggle beneath CameraToggle when camera off.
+
+src/components/Webcam/WebcamDisplay.js
+- Mirror mode: MirrorToggle beneath CameraToggle when showCameraToggle.
+
+src/hooks/useWebcam.js
+- Hidden video element kept in viewport so depth processing continues when feed scrolls out of view.
+- Added hiddenVideoRef; useEffect creates hidden video (position:fixed, 1×1px, aria-hidden), appends to body; cleanup removes and clears srcObject.
+- drawVideoFrame: sync stream from visible to hidden video each frame (handles initial load and device switch).
+- drawVideoFrame: use hidden video for drawImage and frame dimensions; keep visible video for scale factor (clientWidth/clientHeight for grid coordinate conversion).
+
+public/electron.js
+- CLI: added mirror: false to config; --mirror and --no-mirror switch cases.
+
+src/services/externalIntegrationService.js
+- Added getMirrorMode() returning cliConfigCache?.mirror === true.
+
+ExternalDocumentation.txt
+- Documented --mirror and --no-mirror parameters.
+
+src/components/Cylinder/TaskInstructions.jsx
+- TaskType.ENDLESS: instruct "Freeform".
+
+
+
+NEW FILES
+=========
+
+src/components/Playing/GraceStatusBar.js
+- Endless grace bar UI: standard vs temporary grace, penalty-at-surface state; 32px height, 450px max width; temporary grace color #7c3aed.
+
+src/atoms/mirrorModeAtom.js
+- mirrorModeAtom (atomWithStorage) for persisted user preference.
+- effectiveMirrorAtom (derived) true only when mirror enabled and playState === PLAYING.
+
+src/components/MirrorToggle.js
+- Button component toggling mirror mode; Repeat icon, "Mirror On" / "Mirror Off" label.
+- Applies button-primary (blue) when mirror mode on; matches selected nav tab styling.
+
+
+
+
+
+
+
+
+
+Revision 10 - Depth Recognition, Audio Pack, and HoldAndClap Feedback Fixes
+============================================================================
+
+Fixed tasks not updating hold time / dive count when target depth was reached; effected HoldDepth, HitDepth, Diving, and Endless
+Fixed Endless.ENDLESS and Lvl_begint.START sharing the same audio paths.
+Updated HoldAndClap to use periodic feedback (every 4-6 claps) matching the Clap task.
+
+
+
+MODIFIED FILES
+==============
+
+src/components/Tasks/audio.js
+- Changed Endless.ENDLESS to use distinct paths (audio/lvl/endless/1 start a.mp3, etc.) instead of sharing Lvl_begint.START paths.
+
+src/services/audioResolver.js
+- Added fallback: when resolving Endless.ENDLESS and pack has no value, resolve Lvl_begint.START instead.
+
+src/components/Playing/HoldDepth.js
+- Added diveState to effect dependency arrays so hold countdown re-runs when depth changes.
+
+src/components/Playing/HitDepth.js
+- Added diveState to effect dependency arrays so hit detection re-runs when depth changes.
+
+src/components/Playing/Diving.js
+- Added diveState to effect dependency arrays so depth feedback re-runs when depth changes.
+
+src/components/Playing/EndlessDive.js
+- Added diveState to effect dependency arrays; fixed grace/surface interval stale closure by using depthRef.current for at-surface check.
+
+src/components/Playing/HoldAndClapDetector.js
+- Added lastFeedbackClap and nextFeedbackIn state for periodic feedback; feedback now every 4-6 successful claps when >2 claps remaining; reset feedback state on attempt reset and task change.
+
+
+
+
+
+
+
+
+
+Revision 9 - Electron Audio Pack Export Fix and Camera Toggle Feature
+=====================================================================
+
+Added camera toggle feature allowing users to turn the camera feed on or off from most non-playing tabs.
+Fixed audio pack export in packaged Electron builds - now uses the same pattern as calibration export. Browser behavior unchanged.
+Corrected CLI arguments not being passed and handled correctly.
+Fixed endless task score events to calculate event thresholds relative to the last event and prior session score, rather than absolute session score.
+Added some sound types to the sound list for score events in endless tasks
+Corrected alignment on "Import Pack" button in the Audio Pack Editor.
+
+
+
+MODIFIED FILES
+==============
+
+public/electron.js
+- Added write-binary-file IPC handler to write binary data (ArrayBuffer) to disk; creates parent directories if needed.
+
+public/preload.js
+- Exposed showSaveDialog and writeBinaryFile on electronAPI for renderer use.
+
+src/components/AudioPackEditor/AudioPackEditor.jsx
+- Import exportAudioPackToFile from audioPackExportService. Updated handleExport to use service; in Electron shows save dialog and writes via IPC, in browser triggers blob download.
+
+src/components/ContentLibrary/ContentLibrary.jsx
+- Import exportAudioPackToFile from audioPackExportService. Updated handleExportPack to use service; in Electron shows save dialog and writes via IPC, in browser triggers blob download.
+
+src/App.js
+- Added camera area wrapper with showCamera/showCameraArea/showCameraToggle logic. Renders WebcamComponent or "Camera is off" placeholder; CameraToggle below placeholder when camera disabled. Headless init sets camera on.
+
+src/components/Navigation.js
+- Removed camera toggle from navigation row (moved to camera area).
+
+src/components/Navigation/LimitedNavigation.jsx
+- Removed camera toggle from navigation row (moved to camera area).
+
+src/components/Webcam/WebcamComponent.js
+- Added navAtom and showCameraToggle; passes showCameraToggle to WebcamDisplay.
+
+src/components/Webcam/WebcamDisplay.js
+- Import CameraToggle. Renders CameraToggle between video container and device selector when showCameraToggle; increased spacing (12px) between feed, toggle, and device buttons.
+
+src/components/Calibration/Calibration.js
+- Added cameraEnabledAtom; disables grid calibration when camera off; shows banner and placeholder readings when camera disabled. Passes disabled/placeholder props to controls.
+
+src/components/NumberControl.jsx
+- Added disabled prop support.
+
+src/components/Calibration/BaseColorControls.js
+- Added disabled prop support.
+
+src/components/Calibration/SensitivityControls.js
+- Added disabled prop support.
+
+src/components/Calibration/PercentControls.js
+- Added disabled prop support.
+
+src/components/Calibration/HysterisisControls.js
+- Added disabled prop support.
+
+src/components/Calibration/GridSelector.jsx
+- Added disabled prop support.
+
+src/components/ColorReading.js
+src/components/ShaftReading.js
+- Added placeholder prop for display when camera disabled.
+
+
+
+NEW FILES
+===================
+
+src/atoms/cameraAtom.js
+- cameraEnabledAtom with atomWithStorage for persisted camera on/off preference.
+
+src/components/Webcam/CameraToggle.js
+- Compact camera on/off toggle button (28px height) with Video/VideoOff icons; positioned between feed and device selector.
+
+src/services/audioPackExportService.js
+- Service for exporting audio pack ZIP: in Electron uses showSaveDialog and writeBinaryFile via IPC; in browser returns blob for component to trigger download. exportAudioPackToFile(zipBlob, defaultFileName).
+
+
+
+
+
+
+
+
+
+Revision 8 - New Tasks, Custom Level Reorganization, and UI Tweaks
+==================================================================
+
+Added Hold and Clap task combining depth hold with clap detection during holds.
+Implemented full Endless task with hold/dive scoring, clap detection during holds, rhythm and depth consistency bonuses, grace period and surface penalties, and score-triggered events.
+Moved custom levels to their own tab for organization, and added difficulty ratings auto-calculated for both default and custom levels
+Moved SFX and audio sliders to the "Mic" tab, which was renamed "Audio"
+Made various tweaks to UI for calibration, audio, and custom level management.
+Corrected a bug where time was not being tracked for achievements.
+
+
+
+MODIFIED FILES
+==============
+
+src/components/Calibration/Calibration.js
+- Removed Audio Settings section (moved to Mic/Audio tab).
+
+src/components/Calibration/GridSelector.jsx
+- Added confirmation prompt when pressing Remove Grid; prompt only appears when more than one grid is configured.
+
+src/components/Mic/Mic.js
+- Added Audio Settings section with SFX and Voice volume sliders below Calibrate Clap Detection. Center-aligned layout with h2 heading. Added margin-y-top for spacing.
+
+src/components/Playing/ClapDetector.js
+- Added margin-y-top above Calibrate Clap Detection heading.
+
+src/components/Navigation.js
+- Renamed Mic tab label to Audio (kept Mic icon).
+
+src/components/Navigation/LimitedNavigation.jsx
+- Renamed Mic tab label to Audio (kept Mic icon).
+
+src/components/LevelEditor/TaskForm.jsx
+- Moved Executable Script section above Score Events for Endless tasks. Added Endless score events UI with Add/Remove events, type-specific fields (play_sound, run_script, add_grace), and Repeat Events checkbox. Auto-select Endless.ENDLESS audio when task type changes to Endless.
+
+src/components/LevelEditor/TaskBuilder.jsx
+- Added + Endless button. New Endless tasks include scoreEvents, repeatEvents, and audio defaults.
+
+src/components/LevelEditor/taskAudioConfig.js
+- Added Endless.ENDLESS as default in ENDLESS_AUDIO. Added EVENT_SOUND_OPTIONS for score-triggered events. Added getDefaultEndlessAudio helper.
+
+src/components/AudioPackEditor/AudioPackEditor.jsx
+- Moved HoldAndClap and Endless audio categories to Task Assignment section.
+
+src/components/Playing/HoldAndClapDetector.js
+- Hold and Clap task component combining depth hold with clap detection; scores claps during holds with depth-based multipliers.
+
+src/components/Playing/EndlessDive.js
+- Major rewrite: added task/onTaskOver props, useTimeLimit, hold and dive scoring, useClapDetection for claps during holds, rhythm and depth consistency bonuses, grace period and surface penalties, score-triggered events. Replaced Recent Movements with ScoreList. Added running totals display.
+
+src/components/Tasks/audio.js
+- Added Endless.ENDLESS audio event reusing Lvl_begint.START files.
+
+src/components/Tasks/task.js
+- Updated createENDLESSTask to use AUDIO.Endless.ENDLESS. Added getTaskSummary case for ENDLESS.
+
+src/components/Tasks/taskSummary.js
+- Added generateSummaryENDLESS with counts, scores, holdTimeByDepth, divesByDepth. Import SURFACE_PENALTY from endlessScoring.
+
+src/components/Training/scores.js
+- Added calcPerfectEndlessScore and calcPassEndlessScore.
+
+src/components/Gameover/Gameover.js
+- Added ENDLESS case to calculateLevelScores. Added Endless summary display branch. Updated getTotalHoldTimeForDepth and getTotalDivesForDepth for Endless.
+
+src/services/sessionExportService.js
+- Added Endless handling for dives and hold time in formatSessionData.
+
+src/services/levelDifficultyService.js
+- Added ENDLESS to TASK_TYPES. Added calcPerfectEndlessScore in computeCalibrationInputs.
+
+
+
+NEW FILES
+===================
+
+src/components/Playing/endlessScoring.js
+- Constants and helpers for Endless scoring: HOLD_POINTS_PER_DEPTH, CLAP_BONUS_BASE, DEPTH_CLAP_FACTOR, SURFACE_PENALTY, grace settings, getTempoFromBpm, getDepthRangeFactor, computeRhythmBonusMultiplier, computeDepthBonus.
+
+
+
+
+
+
+
+
+
+Revision 7 - Audio Channel Separation and Electron Protocol Fix
+===============================================================
+
+Separated SFX and voice audio into independent playback channels so voice lines are no longer interrupted by SFX, and added separate volume sliders on the Calibration screen.
+Fixed the app:// protocol handler to decode URI path segments so audio files with spaces load correctly in the packaged Electron build.
+
+
+
+MODIFIED FILES
+==============
+
+src/atoms/audioAtom.js
+- Added sfxVolumeAtom and voiceVolumeAtom with atomWithStorage (default 100%, persisted to localStorage).
+
+src/components/AudioPlayer.js
+- Split playback into separate SFX and Voice channels using distinct audio refs so they no longer interrupt each other; applied volume from atoms to each channel.
+
+src/components/Calibration/Calibration.js
+- Added Audio Settings section with VolumeControl sliders for SFX and Voice, placed between export/import buttons and Help section.
+
+public/electron.js
+- Decoded pathname segments with decodeURIComponent in app protocol handler so percent-encoded filenames (e.g. spaces as %20) resolve correctly in packaged builds.
+
+
+
+NEW FILES
+===================
+
+src/components/VolumeControl.jsx
+- Reusable volume slider component with mute toggle, percentage display, and support for SFX/Voice atoms; unmute restores to 100%.
+
+
+
+
+
+
+
+
+
+Revision 6 - Webcam Support for macOS Builds
+===================================================
+
+Added main-process permission handling so the packaged app can access the camera and microphone when built on macOS.
+
+
+
+MODIFIED FILES
+==============
+
+package-lock.json
+- Full **`npm`** lockfile regeneration: the **`packages`** map is rebuilt with a much larger transitive tree (thousands of additional **`node_modules/**`** entries) to align with updated Electron / macOS packaging metadata in **`package.json`** (**`build.mac`** entitlements paths and **`extendInfo`** usage strings) and the resolved dev/build dependency graph.
+
+public/electron.js
+- Added systemPreferences and session to Electron require.
+- In createWindow(), added macOS-only calls to systemPreferences.askForMediaAccess('camera') and systemPreferences.askForMediaAccess('microphone') before creating the browser window.
+- Added session.defaultSession.setPermissionRequestHandler to grant media, camera, and microphone when the renderer requests them.
+- Added session.defaultSession.setPermissionCheckHandler to return true for media, camera, and microphone so getUserMedia works in packaged macOS builds.
+
+
+
+
+
+
+
+
+
+Revision 5 - Multi-Grid Support and Audio Pack Editor Enhancements
+==================================================================
+
+Implemented multi-grid calibration system allowing users to create and manage multiple independent calibration grids, each with its own base color and sensitivity settings. 
+Enhanced audio pack editor with improved organization, per-subcategory upload buttons, and audio playback testing functionality.
+
+
+
+MODIFIED FILES
+==============
+
+src/atoms/gridAtoms.js
+- Added multi-grid atoms including gridsAtom (array of grid objects), selectedGridIdAtom (currently selected grid ID), selectedGridAtom (derived selected grid object), and isAllGridsModeAtom (derived "All Grids" mode flag).
+- Added allGridSquaresAtom to combine squares from all grids, gridSquareOwnershipAtom to track which grid owns each square, and combinedShaftPercentAtom to calculate combined shaft percentage across all grids.
+- Added gridAverageColorsAtom and gridColorsAtom for per-grid color tracking, gridMigrationDoneAtom to track migration completion, and kept legacy atoms for migration compatibility.
+
+src/components/Calibration/Calibration.js
+- Updated to use multi-grid atoms (gridsAtom, selectedGridAtom) instead of legacy single-grid atoms.
+- Added logic to calculate base color from selected grid or average of all grids in "All Grids" mode.
+- Updated to use combinedShaftPercentAtom instead of legacy gridShaftPercentAtom.
+
+src/components/Calibration/BaseColorControls.js
+- Refactored to read and write base color from selected grid's baseColor property within gridsAtom.
+- Added support for "All Grids" mode disabling individual grid editing.
+- Updated to use gridAverageColorsAtom for "Capture current average" functionality.
+
+src/components/Calibration/SensitivityControls.js
+- Refactored to read and write sensitivity from selected grid's sensitivity property within gridsAtom.
+- Added support for "All Grids" mode disabling individual grid editing.
+- Updated handlers to modify gridsAtom using function updaters for proper state management.
+
+src/components/Webcam/WebcamDisplay.js
+- Updated to use multi-grid atoms (gridsAtom, selectedGridAtom, allGridSquaresAtom, gridSquareOwnershipAtom) for grid rendering.
+- Added support for rendering multiple grids simultaneously with different colors (blue for active, amber for inactive).
+- Updated grid outline drawing to support per-grid ownership and "All Grids" mode visualization.
+- Changed inactive grid color from grey (#808080) to amber (#FFB84D) for better visibility.
+
+src/components/Webcam/WebcamComponent.js
+- Added gridMigrationDoneAtom check to prevent rendering before migration completes.
+
+src/hooks/useGridProcessor.js
+- Updated to use combinedShaftPercentAtom instead of legacy gridShaftPercentAtom.
+- Added gridMigrationDoneAtom check to prevent processing before migration completes.
+
+src/services/calibrationService.js
+- Updated exportCalibration to use multi-grid format (v2.0) with grids array containing individual grid objects with id, name, squares, baseColor, and sensitivity.
+- Updated validateCalibration to validate v2.0 multi-grid format with grid overlap checking.
+- Updated applyCalibration to import v2.0 multi-grid format and set gridsAtom with imported grids.
+- Removed support for legacy v1.0 single-grid format.
+
+src/components/AudioPackEditor/AudioCategoryEditor.jsx
+- Moved upload button from category level to individual subcategory level, allowing separate upload buttons for each subcategory within a category.
+- Added handlePlayAudio function with custom-content URL resolution for testing uploaded audio files.
+- Added "Play" button next to each uploaded audio file for immediate playback testing.
+
+src/components/AudioPackEditor/AudioFileUploader.jsx
+- Added subcategory prop to component signature for unique file input IDs per subcategory.
+- Updated file input ID to include both category and subcategory.
+
+src/components/AudioPackEditor/AudioPackEditor.jsx
+- Reorganized audio categories into logical groups with section headings: Baseline, Session Start, Task Assignment, Performance, Session End, and Session Summary.
+- Updated category ordering logic to use grouped structure instead of flat array.
+
+src/components/AudioPackEditor/AudioPackEditor.css
+- Added styling for category group headings with larger font size, bold weight, and bottom border separator.
+- Added spacing between category groups.
+
+
+
+NEW FILES
+===================
+
+src/components/Calibration/GridSelector.jsx
+- Component for selecting, adding, removing, and renaming calibration grids with dropdown selector, "All Grids" mode option, and grid name editing with duplicate validation.
+
+src/utils/gridMigration.js
+- Migration utility to convert legacy single-grid atoms (gridSquaresAtom, gridBaseColorAtom, gridSensitivityAtom) to multi-grid format on app startup.
+- Creates default grid if no legacy data exists and ensures at least one grid is always present.
+
+src/utils/gridUtils.js
+- Utility functions for grid management including generateGridId for unique IDs, createDefaultGrid for default grid creation, validateNoOverlaps for overlap checking, and generateUniqueGridName for naming grids.
+
+
+
+
+
+
+
+
+
+Revision 4 - CLI Integration and Calibration Enhancements
+=========================================================
+
+Implemented complete CLI integration system allowing external programs to launch the application, allowing them to set up calibration and run individual levels.
+Additional utility features include calibration data management, session result export, and comprehensive error handling with exit codes.
+
+
+
+MODIFIED FILES
+==============
+
+package-lock.json
+- Regenerated with the same **`packages`** path set; only **`baseline-browser-mapping`** moves **2.9.16 → 2.9.17** (updated **`resolved`** tarball URL and **`integrity`**). Root **`package.json`** dependency declarations unchanged.
+
+public/electron.js
+- Added CLI argument parsing at module load time with validation, IPC handlers for config retrieval, file I/O (session results, calibration data), exit code coordination, and path resolution relative to current working directory.
+
+public/preload.js
+- Exposed CLI integration APIs (getCLIConfig, writeSessionResults, requestExit, sendValidationResults, readCalibrationFile) to renderer process via contextBridge.
+
+src/App.js
+- Added external mode initialization with hybrid window ready detection, pre-flight checks, validation mode handling, calibration-only mode support, single level mode with pre-loaded level handling, loading states, and navigation state initialization based on CLI parameters.
+
+src/components/Navigation.js
+- Added conditional rendering to show LimitedNavigation component when external mode is active, hiding full navigation menu.
+
+src/components/Calibration/Calibration.js
+- Added CalibrationExport and CalibrationImport components, and "Complete Calibration" button for calibration-only mode that exports calibration data and exits application.
+
+src/components/Gameover/Gameover.js
+- Added session result export via IPC in external mode, auto-close functionality with appropriate exit codes.
+- Added countdown timer display showing remaining time before application closes (15 seconds), only visible in external mode.
+
+src/components/Playing/Playing.js
+- Added auto-start detection for headless mode that automatically calls gotoNextTask() when conditions are met, external timers integration via useExternalTimers hook, and calibration data application when level starts if not already applied.
+
+src/components/Training/Training.jsx
+- Added pre-loaded level handling from CLI parameters, audio pack override logic for external mode (priority: level pack > CLI pack > default, never uses Content Library pack), and useEffect to auto-select level when CLI level parameter is provided.
+
+src/services/storageService.js
+- Added calibration profile storage methods (saveCalibrationProfile, loadCalibrationProfile, getAllCalibrationProfiles, deleteCalibrationProfile) using localStorage with 'calibration_profiles' key.
+
+
+
+NEW FILES
+===================
+
+src/services/externalIntegrationService.js
+- Service for managing CLI configuration and mode detection with hybrid window ready detection (immediate check + fallback polling), providing methods to check external mode, headless mode, calibration-only mode, validation mode, and retrieve CLI parameters.
+
+src/services/calibrationService.js
+- Service for calibration data operations including export from atoms, import with validation, validation of calibration data structure and values, application to atoms, and profile management (save, load, delete, getAll).
+
+src/services/preflightService.js
+- Service for pre-flight checks including webcam availability detection, dependency checking (MediaDevices API, IndexedDB, localStorage), level structure validation, and calibration data validation.
+
+src/services/validationService.js
+- Service for validating levels and audio packs, checking level existence, structure validation, audio pack existence verification, and returning detailed error/warning messages.
+
+src/services/sessionExportService.js
+- Service for formatting and exporting session results to JSON, calculating session stats (loads, dives, hold time, penalties), formatting task details, and exporting via IPC to main process.
+
+src/components/Navigation/LimitedNavigation.jsx
+- Limited navigation component for external mode showing only Help, Calibrate, Mic, Buttplug, and Play buttons, hiding level selection and content configuration options.
+
+src/components/ExternalMode/CalibrationTimer.jsx
+- Component displaying calibration countdown timer in HH:MM:SS format at top of screen, updating every second and triggering application exit with code 2 when timer reaches 0.
+
+src/components/ExternalMode/PauseTimer.jsx
+- Component displaying pause time remaining in MM:SS format during paused gameplay, only counting down when level is paused and triggering application exit with code 3 on timeout.
+
+src/components/ExternalMode/HeadlessWrapper.jsx
+- Wrapper component for headless mode that conditionally renders children without navigation, used to hide UI elements when headless mode is active.
+
+src/components/Calibration/CalibrationExport.jsx
+- Component providing export button to save current calibration to JSON file via IPC, with success/error feedback and fallback to browser download in non-Electron environments.
+
+src/components/Calibration/CalibrationImport.jsx
+- Component providing import button to load calibration from JSON file with file picker, validation feedback, and error handling for invalid calibration data.
+
+src/hooks/useExternalTimers.js
+- Custom hook managing calibration and pause timers with state tracking, automatic countdown, timeout handling with exit IPC calls, and reset functionality.
+
+src/atoms/externalModeAtom.js
+- Jotai atom storing CLI configuration and external mode state for reactive state management throughout the application.
+
+src/atoms/calibrationProfileAtom.js
+- Jotai atom storing currently active calibration profile ID for quick switching between calibration presets.
+
+ExternalDocumentation.txt
+- Comprehensive documentation file covering all CLI parameters with descriptions, examples, exit codes, and session output JSON format. Also includes default level IDs with titles and descriptions for reference.
+
+
+
+
+
+
+
+
+
+Revision 3 - Default Levels Custom Audio Fix
+===================================================
+
+Fixed issue where default levels were not using custom audio packs when selected in the Content Library.
+
+
+
+MODIFIED FILES
+==============
+
+src/components/Training/Training.jsx
+- Modified handleSelectLevel() to explicitly sync active audio pack from storage for default levels, ensuring the activeCustomPack module variable is synchronized when a default level is selected (previously only set fallback pack).
+
+src/services/audioResolver.js
+- Added findKeyInDefaultAudio() helper function to perform reverse lookup of direct audio paths to their category/key in the default AUDIO structure.
+- Updated findPathInPack() to use default AUDIO structure mapping: finds which category.key a path belongs to, then checks custom pack for replacement of that key. This enables custom packs to replace audio even when default levels use direct paths.
+- Modified direct path resolution logic to check custom packs via reverse lookup before returning original path, ensuring custom audio pack replacements are used for default levels.
+- Enhanced array of direct paths resolution to find matching category.key in default AUDIO, then use custom pack's replacement for that entire key if available.
+
+
+
+
+
+
+
+
+
+Revision 2 - Executable Integration Feature
+===================================================
+
+Implemented optional executable script execution for all task types, allowing external programs to run when tasks start during gameplay. This function is only available when running the packaged desktop app - not supported in browser.
+
+
+
+MODIFIED FILES
+==============
+
+public/electron.js
+- Added IPC handlers for executable management (execute-external-program, check-file-exists, show-file-picker), process registry Map for tracking spawned processes, whitelist configuration for allowed directories and file extensions, path validation with symlink resolution, and async process cleanup on app exit with platform-specific signal handling.
+
+public/preload.js
+- Exposed secure executable APIs (executeExternalProgram, checkFileExists, showExecutablePicker) to renderer process via contextBridge.
+
+src/components/LevelEditor/TaskForm.jsx
+- Added executable path field with Browse button (file picker), Test button, and Clear button, applying to all task types with browser mode detection and appropriate messaging.
+
+src/components/Playing/Playing.js
+- Added executable execution in gotoNextTask() function that runs external programs non-blocking when tasks begin, with error handling that logs failures without disrupting gameplay.
+
+
+
+NEW FILES
+===================
+
+src/services/executableService.js
+- Service class for managing executable execution with Electron environment detection, browser fallback handling, and methods for selecting, testing, and running executables.
+
+scripts/
+- New directory where executable files are stored for running during gameplay.
+
+
+
+
+
+
+
+
+
+Revision 1 - Audio Pack Management UI Implementation
+=====================================================
+
+Implemented custom audio pack management, including state management, error handling, path normalization, and fixes for memory leaks. 
+Defined audio pack selection behavior:
+- Default levels use the currently selected audio pack from Content Library, with fallback to default audio files.*
+- Custom levels use their specified audio pack from level metadata, with fallback to the currently selected pack from Content Library, then default audio files.
+
+*NOTE: This behavior was defined, but not functional due to a bug. This is corrected in Revision 3.
+
+
+
+MODIFIED FILES
+==============
+
+package-lock.json
+- Regenerated **`npm`** lockfile (**lockfileVersion** 3) without edits to root **`package.json`** **`dependencies`**: the **`packages`** map shrinks overall but churns heavily—hundreds of nested paths added/removed and many **`version` / `resolved` / `integrity`** updates—dominated by **`@babel/*`** and related toolchain moving into the **7.27–7.28** release line plus nested dedupe layout changes from **`npm install`**.
+
+src/atoms/audioAtom.js
+- Added activePackIdAtom for reactive state management of the currently active audio pack.
+
+src/atoms/navAtom.js
+- Added AUDIO_PACK_EDITOR and CONTENT_LIBRARY navigation constants for the new UI components.
+
+src/services/levelManager.js
+- Added isDefaultLevel() helper function to check if a level is a default level.
+
+src/services/audioResolver.js
+- Added case-insensitive category matching function and updated resolveAudioReference to use case-insensitive matching when resolving audio references.
+- Updated resolveAudioReference() to accept optional fallbackPack parameter.
+- Added fallback pack resolution logic: tries primary pack, then fallback pack, then default AUDIO.
+- Updated getAudioFile() to support fallback pack parameter.
+
+src/services/storageService.js
+- Added object URL caching and cleanup system (revokePackUrls, extractPackId), checkFileExists function for duplicate detection, normalizeAudioPath helper with input validation, extractFilePath helper for custom-content URL parsing, and enhanced IndexedDB error handling with quota checking.
+
+src/services/audioManager.js
+- Added exportPack and importPack functions for ZIP-based pack sharing, updated setActiveCustomPack to sync with Jotai atom and cleanup object URLs, updated deletePack to revoke object URLs before deletion, added validateActivePack function for app load validation, fixed getAudioFile to properly handle arrays of custom-content URLs, and added PackIdConflictError custom error class for import conflict handling.
+- Added fallbackPack tracking variable and getFallbackPack() method.
+- Added setFallbackPack() method to set the fallback audio pack.
+- Updated getAudio(), getAudioFileSync(), and getAudioFile() to pass fallback pack to resolver.
+
+src/components/AudioPlayer.js
+- Refactored all useEffect hooks to properly handle async operations with cancellation logic, added Audio element cleanup to prevent memory leaks and overlapping playback, and updated to use async getAudioFile() consistently throughout.
+
+src/components/Training/Training.jsx
+- Added pack validation and auto-activation when a level is selected, with race condition prevention using cancellation tracking and early cancellation checks.
+- Modified handleSelectLevel() to implement new audio pack behavior: default levels do not change active pack (set fallback to default), custom levels with pack use level's pack as primary with currently selected pack as fallback, and custom levels without pack use currently selected pack with fallback to default.
+- Added import for storageService to access currently selected pack.
+
+src/components/LevelEditor/LevelEditor.jsx
+- Added Level ID display in Preview section for easy identification when using CLI, displayed in monospace font with light background for readability.
+- Removed disabled attribute from audio pack selector and updated label from "Audio Pack (coming soon):" to "Audio Pack:" to enable pack selection.
+- Changed dropdown option from "Default Audio Pack" to "Use Selected Audio".
+- Updated help text to explain behavior based on selection (specific pack vs. use selected audio).
+
+src/components/Navigation.js
+- Added navigation buttons for Audio Pack Editor and Content Library with appropriate icons and handlers, and reorganized menu layout into two rows: Row 1 (Help, Calibrate, Mic, Buttplug, Levels, Play) and Row 2 (Content Library, Audio Pack Editor, Edit Levels, Achievements).
+
+src/App.js
+- Added useEffect hook to call validateActivePack() after component mounts, and added routes for AudioPackEditor and ContentLibrary components in renderControls().
+
+
+
+NEW FILES
+===================
+
+src/store.js
+- Created Jotai store instance for updating atoms outside of React components, enabling reactive state management from service layer.
+
+src/components/AudioPackEditor/AudioPackEditor.jsx
+- Main component for creating and editing custom audio packs with metadata form, category management, file upload interface, and export/import functionality.
+- Fixed ESLint no-restricted-globals error by replacing confirm() with window.confirm() for explicit global access.
+
+src/components/AudioPackEditor/AudioCategoryEditor.jsx
+- Component for managing audio files within a single category, displaying keys and providing file upload and deletion capabilities.
+
+src/components/AudioPackEditor/AudioFileUploader.jsx
+- Reusable file upload component with drag-and-drop support, file size validation (10MB max), format validation (MP3/WAV only), automatic duplicate filename renaming, and IndexedDB quota checking.
+
+src/components/AudioPackEditor/AudioPackEditor.css
+- Styling for audio pack editor components to ensure consistent look and feel with the rest of the application.
+
+src/components/ContentLibrary/ContentLibrary.jsx
+- Main component for listing and managing all audio packs (default and custom) with activation, export, and delete functionality.
+- Fixed ESLint no-restricted-globals error by replacing confirm() with window.confirm() for explicit global access.
+
+src/components/ContentLibrary/AudioPackCard.jsx
+- Reusable card component for displaying audio pack information including metadata, active status indicator, and action buttons.
+
+src/components/ContentLibrary/ImportDialog.jsx
+- Modal dialog component for importing audio packs from ZIP files with conflict resolution (overwrite, rename, or cancel), progress indication, and error/warning display.
+
+src/components/ContentLibrary/ContentLibrary.css
+- Styling for content library components including grid layout for pack cards and modal dialog styling.

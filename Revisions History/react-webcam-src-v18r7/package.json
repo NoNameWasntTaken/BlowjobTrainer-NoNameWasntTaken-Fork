@@ -1,0 +1,106 @@
+{
+  "name": "react-webcam",
+  "version": "0.1.0",
+  "private": true,
+  "homepage": "./",
+  "main": "public/electron.js",
+  "description": "A React-based webcam desktop app built with Electron.",
+  "author": "Anonymous",
+  "dependencies": {
+    "buttplug": "^3.2.2",
+    "electron-is-dev": "^2.0.0",
+    "feather-icons": "^4.29.2",
+    "jotai": "^2.9.3",
+    "jszip": "^3.10.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-feather": "^2.0.10",
+    "react-scripts": "5.0.1",
+    "react-webcam": "^7.2.0",
+    "web-vitals": "^2.1.4"
+  },
+  "devDependencies": {
+    "@electron-forge/cli": "^7.2.0",
+    "@electron-forge/maker-dmg": "^7.2.0",
+    "@electron-forge/maker-deb": "^7.2.0",
+    "@electron-forge/maker-rpm": "^7.2.0",
+    "@electron-forge/maker-squirrel": "^7.2.0",
+    "@electron-forge/maker-zip": "^7.2.0",
+    "@electron-forge/plugin-auto-unpack-natives": "^7.2.0",
+    "@electron-forge/plugin-fuses": "^7.2.0",
+    "@electron/fuses": "^1.6.0",
+    "concurrently": "^8.2.2",
+    "cross-env": "^7.0.3",
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1",
+    "wait-on": "^7.2.0"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "node increment-version.js && cross-env CI= react-scripts build",
+    "eject": "react-scripts eject",
+    "serve": "serve -s build",
+    "package": "electron-forge package",
+    "make": "electron-forge make",
+    "make:mac": "electron-forge make --platform darwin",
+    "make:win": "electron-forge make --platform win32",
+    "make:linux": "electron-forge make --platform linux",
+    "electron": "electron .",
+    "electron-dev": "concurrently \"npm start\" \"wait-on http://localhost:3000 && electron .\"",
+    "electron-dev-no-browser": "cross-env BROWSER=none concurrently \"npm start\" \"wait-on http://localhost:3000 && electron .\"",
+    "electron-pack": "npm run build && electron-builder",
+    "electron-pack-win": "npm run build && electron-builder --win",
+    "electron-pack-mac": "npm run build && electron-builder --mac --arm64"
+  },
+  "build": {
+    "appId": "com.reactwebcam.app",
+    "productName": "React Webcam",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "build/**/*",
+      "public/electron.js",
+      "public/preload.js"
+    ],
+    "publish": null,
+    "mac": {
+      "target": "dmg",
+      "category": "public.app-category.utilities",
+      "identity": null,
+      "extendInfo": {
+        "NSMicrophoneUsageDescription": "Please give us access to your microphone",
+        "NSCameraUsageDescription": "Please give us access to your camera",
+        "com.apple.security.device.audio-input": true,
+        "com.apple.security.device.camera": true
+      },
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "public/logo512.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}

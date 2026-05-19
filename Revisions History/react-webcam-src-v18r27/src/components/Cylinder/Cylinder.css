@@ -1,0 +1,87 @@
+.cylinder-container {
+    display: flex;
+    flex-direction: column;
+    width: 90%;
+}
+
+.grid-row-1 {
+    display: flex;
+    flex-direction: row;
+    height: 100px;
+}
+
+.grid-row-1 .cylinder-item {
+    flex: 1;
+    min-width: 0;
+}
+
+.grid-row-2 {
+    display: grid;
+    /* 1/5th and 4/5th layout */
+    grid-template-columns: 1fr 5fr;
+}
+
+.cylinder-item {
+    height: 100px;
+    display: flex;
+    font-size: 2rem;
+    background-color: #eee;
+    justify-content: center;
+    align-items: center;
+    transition: background-color 0.3s ease;
+    border: 3px solid #ddd;
+}
+
+
+.cylinder-instruction {
+    /* Flexible height for the second item in row 2 */
+    text-align: center;
+    height: auto;
+    vertical-align: middle;
+}
+
+.mirror {
+    transform: scaleX(-1);
+}
+
+
+/* 
+.cylinder-section {
+    flex: 1;
+    display: flex;
+    background-color: #eee;
+    justify-content: center;
+    align-items: center;
+    transition: background-color 0.3s ease;
+    border: 3px solid #ddd;
+    flex-grow: 1;
+}
+
+.cylinder-text-section {
+    flex-grow: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 3rem;
+    flex-grow: 4;
+} */
+
+.hide-section {
+    opacity: 0;
+}
+
+.round-right {
+    border-top-right-radius: 60px;
+    border-bottom-right-radius: 60px;
+}
+
+.round-bottom {
+    border-top-right-radius: 60px;
+    border-bottom-right-radius: 60px;
+    border-bottom-left-radius: 60px;
+}
+
+
+button {
+    margin: 0 5px;
+}

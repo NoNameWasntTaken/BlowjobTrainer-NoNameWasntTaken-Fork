@@ -1,0 +1,507 @@
+﻿Revision 8 - New Tasks, Custom Level Reorganization, and UI Tweaks
+==================================================================
+
+Added Hold and Clap task combining depth hold with clap detection during holds.
+Implemented full Endless task with hold/dive scoring, clap detection during holds, rhythm and depth consistency bonuses, grace period and surface penalties, and score-triggered events.
+Moved custom levels to their own tab for organization, and added difficulty ratings auto-calculated for both default and custom levels
+Moved SFX and audio sliders to the "Mic" tab, which was renamed "Audio"
+Made various tweaks to UI for calibration, audio, and custom level management.
+Corrected a bug where time was not being tracked for achievements.
+
+
+
+MODIFIED FILES
+==============
+
+src/components/Calibration/Calibration.js
+- Removed Audio Settings section (moved to Mic/Audio tab).
+
+src/components/Calibration/GridSelector.jsx
+- Added confirmation prompt when pressing Remove Grid; prompt only appears when more than one grid is configured.
+
+src/components/Mic/Mic.js
+- Added Audio Settings section with SFX and Voice volume sliders below Calibrate Clap Detection. Center-aligned layout with h2 heading. Added margin-y-top for spacing.
+
+src/components/Playing/ClapDetector.js
+- Added margin-y-top above Calibrate Clap Detection heading.
+
+src/components/Navigation.js
+- Renamed Mic tab label to Audio (kept Mic icon).
+
+src/components/Navigation/LimitedNavigation.jsx
+- Renamed Mic tab label to Audio (kept Mic icon).
+
+src/components/LevelEditor/TaskForm.jsx
+- Moved Executable Script section above Score Events for Endless tasks. Added Endless score events UI with Add/Remove events, type-specific fields (play_sound, run_script, add_grace), and Repeat Events checkbox. Auto-select Endless.ENDLESS audio when task type changes to Endless.
+
+src/components/LevelEditor/TaskBuilder.jsx
+- Added + Endless button. New Endless tasks include scoreEvents, repeatEvents, and audio defaults.
+
+src/components/LevelEditor/taskAudioConfig.js
+- Added Endless.ENDLESS as default in ENDLESS_AUDIO. Added EVENT_SOUND_OPTIONS for score-triggered events. Added getDefaultEndlessAudio helper.
+
+src/components/AudioPackEditor/AudioPackEditor.jsx
+- Moved HoldAndClap and Endless audio categories to Task Assignment section.
+
+src/components/Playing/HoldAndClapDetector.js
+- Hold and Clap task component combining depth hold with clap detection; scores claps during holds with depth-based multipliers.
+
+src/components/Playing/EndlessDive.js
+- Major rewrite: added task/onTaskOver props, useTimeLimit, hold and dive scoring, useClapDetection for claps during holds, rhythm and depth consistency bonuses, grace period and surface penalties, score-triggered events. Replaced Recent Movements with ScoreList. Added running totals display.
+
+src/components/Tasks/audio.js
+- Added Endless.ENDLESS audio event reusing Lvl_begint.START files.
+
+src/components/Tasks/task.js
+- Updated createENDLESSTask to use AUDIO.Endless.ENDLESS. Added getTaskSummary case for ENDLESS.
+
+src/components/Tasks/taskSummary.js
+- Added generateSummaryENDLESS with counts, scores, holdTimeByDepth, divesByDepth. Import SURFACE_PENALTY from endlessScoring.
+
+src/components/Training/scores.js
+- Added calcPerfectEndlessScore and calcPassEndlessScore.
+
+src/components/Gameover/Gameover.js
+- Added ENDLESS case to calculateLevelScores. Added Endless summary display branch. Updated getTotalHoldTimeForDepth and getTotalDivesForDepth for Endless.
+
+src/services/sessionExportService.js
+- Added Endless handling for dives and hold time in formatSessionData.
+
+src/services/levelDifficultyService.js
+- Added ENDLESS to TASK_TYPES. Added calcPerfectEndlessScore in computeCalibrationInputs.
+
+
+
+NEW FILES
+===================
+
+src/components/Playing/endlessScoring.js
+- Constants and helpers for Endless scoring: HOLD_POINTS_PER_DEPTH, CLAP_BONUS_BASE, DEPTH_CLAP_FACTOR, SURFACE_PENALTY, grace settings, getTempoFromBpm, getDepthRangeFactor, computeRhythmBonusMultiplier, computeDepthBonus.
+
+
+
+
+
+
+
+
+
+Revision 7 - Audio Channel Separation and Electron Protocol Fix
+===============================================================
+
+Separated SFX and voice audio into independent playback channels so voice lines are no longer interrupted by SFX, and added separate volume sliders on the Calibration screen.
+Fixed the app:// protocol handler to decode URI path segments so audio files with spaces load correctly in the packaged Electron build.
+
+
+
+MODIFIED FILES
+==============
+
+src/atoms/audioAtom.js
+- Added sfxVolumeAtom and voiceVolumeAtom with atomWithStorage (default 100%, persisted to localStorage).
+
+src/components/AudioPlayer.js
+- Split playback into separate SFX and Voice channels using distinct audio refs so they no longer interrupt each other; applied volume from atoms to each channel.
+
+src/components/Calibration/Calibration.js
+- Added Audio Settings section with VolumeControl sliders for SFX and Voice, placed between export/import buttons and Help section.
+
+public/electron.js
+- Decoded pathname segments with decodeURIComponent in app protocol handler so percent-encoded filenames (e.g. spaces as %20) resolve correctly in packaged builds.
+
+
+
+NEW FILES
+===================
+
+src/components/VolumeControl.jsx
+- Reusable volume slider component with mute toggle, percentage display, and support for SFX/Voice atoms; unmute restores to 100%.
+
+
+
+
+
+
+
+
+
+Revision 6 - Webcam Support for macOS Builds
+===================================================
+
+Added main-process permission handling so the packaged app can access the camera and microphone when built on macOS.
+
+
+
+MODIFIED FILES
+==============
+
+package-lock.json
+- Full **`npm`** lockfile regeneration: the **`packages`** map is rebuilt with a much larger transitive tree (thousands of additional **`node_modules/**`** entries) to align with updated Electron / macOS packaging metadata in **`package.json`** (**`build.mac`** entitlements paths and **`extendInfo`** usage strings) and the resolved dev/build dependency graph.
+
+public/electron.js
+- Added systemPreferences and session to Electron require.
+- In createWindow(), added macOS-only calls to systemPreferences.askForMediaAccess('camera') and systemPreferences.askForMediaAccess('microphone') before creating the browser window.
+- Added session.defaultSession.setPermissionRequestHandler to grant media, camera, and microphone when the renderer requests them.
+- Added session.defaultSession.setPermissionCheckHandler to return true for media, camera, and microphone so getUserMedia works in packaged macOS builds.
+
+
+
+
+
+
+
+
+
+Revision 5 - Multi-Grid Support and Audio Pack Editor Enhancements
+==================================================================
+
+Implemented multi-grid calibration system allowing users to create and manage multiple independent calibration grids, each with its own base color and sensitivity settings. 
+Enhanced audio pack editor with improved organization, per-subcategory upload buttons, and audio playback testing functionality.
+
+
+
+MODIFIED FILES
+==============
+
+src/atoms/gridAtoms.js
+- Added multi-grid atoms including gridsAtom (array of grid objects), selectedGridIdAtom (currently selected grid ID), selectedGridAtom (derived selected grid object), and isAllGridsModeAtom (derived "All Grids" mode flag).
+- Added allGridSquaresAtom to combine squares from all grids, gridSquareOwnershipAtom to track which grid owns each square, and combinedShaftPercentAtom to calculate combined shaft percentage across all grids.
+- Added gridAverageColorsAtom and gridColorsAtom for per-grid color tracking, gridMigrationDoneAtom to track migration completion, and kept legacy atoms for migration compatibility.
+
+src/components/Calibration/Calibration.js
+- Updated to use multi-grid atoms (gridsAtom, selectedGridAtom) instead of legacy single-grid atoms.
+- Added logic to calculate base color from selected grid or average of all grids in "All Grids" mode.
+- Updated to use combinedShaftPercentAtom instead of legacy gridShaftPercentAtom.
+
+src/components/Calibration/BaseColorControls.js
+- Refactored to read and write base color from selected grid's baseColor property within gridsAtom.
+- Added support for "All Grids" mode disabling individual grid editing.
+- Updated to use gridAverageColorsAtom for "Capture current average" functionality.
+
+src/components/Calibration/SensitivityControls.js
+- Refactored to read and write sensitivity from selected grid's sensitivity property within gridsAtom.
+- Added support for "All Grids" mode disabling individual grid editing.
+- Updated handlers to modify gridsAtom using function updaters for proper state management.
+
+src/components/Webcam/WebcamDisplay.js
+- Updated to use multi-grid atoms (gridsAtom, selectedGridAtom, allGridSquaresAtom, gridSquareOwnershipAtom) for grid rendering.
+- Added support for rendering multiple grids simultaneously with different colors (blue for active, amber for inactive).
+- Updated grid outline drawing to support per-grid ownership and "All Grids" mode visualization.
+- Changed inactive grid color from grey (#808080) to amber (#FFB84D) for better visibility.
+
+src/components/Webcam/WebcamComponent.js
+- Added gridMigrationDoneAtom check to prevent rendering before migration completes.
+
+src/hooks/useGridProcessor.js
+- Updated to use combinedShaftPercentAtom instead of legacy gridShaftPercentAtom.
+- Added gridMigrationDoneAtom check to prevent processing before migration completes.
+
+src/services/calibrationService.js
+- Updated exportCalibration to use multi-grid format (v2.0) with grids array containing individual grid objects with id, name, squares, baseColor, and sensitivity.
+- Updated validateCalibration to validate v2.0 multi-grid format with grid overlap checking.
+- Updated applyCalibration to import v2.0 multi-grid format and set gridsAtom with imported grids.
+- Removed support for legacy v1.0 single-grid format.
+
+src/components/AudioPackEditor/AudioCategoryEditor.jsx
+- Moved upload button from category level to individual subcategory level, allowing separate upload buttons for each subcategory within a category.
+- Added handlePlayAudio function with custom-content URL resolution for testing uploaded audio files.
+- Added "Play" button next to each uploaded audio file for immediate playback testing.
+
+src/components/AudioPackEditor/AudioFileUploader.jsx
+- Added subcategory prop to component signature for unique file input IDs per subcategory.
+- Updated file input ID to include both category and subcategory.
+
+src/components/AudioPackEditor/AudioPackEditor.jsx
+- Reorganized audio categories into logical groups with section headings: Baseline, Session Start, Task Assignment, Performance, Session End, and Session Summary.
+- Updated category ordering logic to use grouped structure instead of flat array.
+
+src/components/AudioPackEditor/AudioPackEditor.css
+- Added styling for category group headings with larger font size, bold weight, and bottom border separator.
+- Added spacing between category groups.
+
+
+
+NEW FILES
+===================
+
+src/components/Calibration/GridSelector.jsx
+- Component for selecting, adding, removing, and renaming calibration grids with dropdown selector, "All Grids" mode option, and grid name editing with duplicate validation.
+
+src/utils/gridMigration.js
+- Migration utility to convert legacy single-grid atoms (gridSquaresAtom, gridBaseColorAtom, gridSensitivityAtom) to multi-grid format on app startup.
+- Creates default grid if no legacy data exists and ensures at least one grid is always present.
+
+src/utils/gridUtils.js
+- Utility functions for grid management including generateGridId for unique IDs, createDefaultGrid for default grid creation, validateNoOverlaps for overlap checking, and generateUniqueGridName for naming grids.
+
+
+
+
+
+
+
+
+
+Revision 4 - CLI Integration and Calibration Enhancements
+=========================================================
+
+Implemented complete CLI integration system allowing external programs to launch the application, allowing them to set up calibration and run individual levels.
+Additional utility features include calibration data management, session result export, and comprehensive error handling with exit codes.
+
+
+
+MODIFIED FILES
+==============
+
+package-lock.json
+- Regenerated with the same **`packages`** path set; only **`baseline-browser-mapping`** moves **2.9.16 → 2.9.17** (updated **`resolved`** tarball URL and **`integrity`**). Root **`package.json`** dependency declarations unchanged.
+
+public/electron.js
+- Added CLI argument parsing at module load time with validation, IPC handlers for config retrieval, file I/O (session results, calibration data), exit code coordination, and path resolution relative to current working directory.
+
+public/preload.js
+- Exposed CLI integration APIs (getCLIConfig, writeSessionResults, requestExit, sendValidationResults, readCalibrationFile) to renderer process via contextBridge.
+
+src/App.js
+- Added external mode initialization with hybrid window ready detection, pre-flight checks, validation mode handling, calibration-only mode support, single level mode with pre-loaded level handling, loading states, and navigation state initialization based on CLI parameters.
+
+src/components/Navigation.js
+- Added conditional rendering to show LimitedNavigation component when external mode is active, hiding full navigation menu.
+
+src/components/Calibration/Calibration.js
+- Added CalibrationExport and CalibrationImport components, and "Complete Calibration" button for calibration-only mode that exports calibration data and exits application.
+
+src/components/Gameover/Gameover.js
+- Added session result export via IPC in external mode, auto-close functionality with appropriate exit codes.
+- Added countdown timer display showing remaining time before application closes (15 seconds), only visible in external mode.
+
+src/components/Playing/Playing.js
+- Added auto-start detection for headless mode that automatically calls gotoNextTask() when conditions are met, external timers integration via useExternalTimers hook, and calibration data application when level starts if not already applied.
+
+src/components/Training/Training.jsx
+- Added pre-loaded level handling from CLI parameters, audio pack override logic for external mode (priority: level pack > CLI pack > default, never uses Content Library pack), and useEffect to auto-select level when CLI level parameter is provided.
+
+src/services/storageService.js
+- Added calibration profile storage methods (saveCalibrationProfile, loadCalibrationProfile, getAllCalibrationProfiles, deleteCalibrationProfile) using localStorage with 'calibration_profiles' key.
+
+
+
+NEW FILES
+===================
+
+src/services/externalIntegrationService.js
+- Service for managing CLI configuration and mode detection with hybrid window ready detection (immediate check + fallback polling), providing methods to check external mode, headless mode, calibration-only mode, validation mode, and retrieve CLI parameters.
+
+src/services/calibrationService.js
+- Service for calibration data operations including export from atoms, import with validation, validation of calibration data structure and values, application to atoms, and profile management (save, load, delete, getAll).
+
+src/services/preflightService.js
+- Service for pre-flight checks including webcam availability detection, dependency checking (MediaDevices API, IndexedDB, localStorage), level structure validation, and calibration data validation.
+
+src/services/validationService.js
+- Service for validating levels and audio packs, checking level existence, structure validation, audio pack existence verification, and returning detailed error/warning messages.
+
+src/services/sessionExportService.js
+- Service for formatting and exporting session results to JSON, calculating session stats (loads, dives, hold time, penalties), formatting task details, and exporting via IPC to main process.
+
+src/components/Navigation/LimitedNavigation.jsx
+- Limited navigation component for external mode showing only Help, Calibrate, Mic, Buttplug, and Play buttons, hiding level selection and content configuration options.
+
+src/components/ExternalMode/CalibrationTimer.jsx
+- Component displaying calibration countdown timer in HH:MM:SS format at top of screen, updating every second and triggering application exit with code 2 when timer reaches 0.
+
+src/components/ExternalMode/PauseTimer.jsx
+- Component displaying pause time remaining in MM:SS format during paused gameplay, only counting down when level is paused and triggering application exit with code 3 on timeout.
+
+src/components/ExternalMode/HeadlessWrapper.jsx
+- Wrapper component for headless mode that conditionally renders children without navigation, used to hide UI elements when headless mode is active.
+
+src/components/Calibration/CalibrationExport.jsx
+- Component providing export button to save current calibration to JSON file via IPC, with success/error feedback and fallback to browser download in non-Electron environments.
+
+src/components/Calibration/CalibrationImport.jsx
+- Component providing import button to load calibration from JSON file with file picker, validation feedback, and error handling for invalid calibration data.
+
+src/hooks/useExternalTimers.js
+- Custom hook managing calibration and pause timers with state tracking, automatic countdown, timeout handling with exit IPC calls, and reset functionality.
+
+src/atoms/externalModeAtom.js
+- Jotai atom storing CLI configuration and external mode state for reactive state management throughout the application.
+
+src/atoms/calibrationProfileAtom.js
+- Jotai atom storing currently active calibration profile ID for quick switching between calibration presets.
+
+ExternalDocumentation.txt
+- Comprehensive documentation file covering all CLI parameters with descriptions, examples, exit codes, and session output JSON format. Also includes default level IDs with titles and descriptions for reference.
+
+
+
+
+
+
+
+
+
+Revision 3 - Default Levels Custom Audio Fix
+===================================================
+
+Fixed issue where default levels were not using custom audio packs when selected in the Content Library.
+
+
+
+MODIFIED FILES
+==============
+
+src/components/Training/Training.jsx
+- Modified handleSelectLevel() to explicitly sync active audio pack from storage for default levels, ensuring the activeCustomPack module variable is synchronized when a default level is selected (previously only set fallback pack).
+
+src/services/audioResolver.js
+- Added findKeyInDefaultAudio() helper function to perform reverse lookup of direct audio paths to their category/key in the default AUDIO structure.
+- Updated findPathInPack() to use default AUDIO structure mapping: finds which category.key a path belongs to, then checks custom pack for replacement of that key. This enables custom packs to replace audio even when default levels use direct paths.
+- Modified direct path resolution logic to check custom packs via reverse lookup before returning original path, ensuring custom audio pack replacements are used for default levels.
+- Enhanced array of direct paths resolution to find matching category.key in default AUDIO, then use custom pack's replacement for that entire key if available.
+
+
+
+
+
+
+
+
+
+Revision 2 - Executable Integration Feature
+===================================================
+
+Implemented optional executable script execution for all task types, allowing external programs to run when tasks start during gameplay. This function is only available when running the packaged desktop app - not supported in browser.
+
+
+
+MODIFIED FILES
+==============
+
+public/electron.js
+- Added IPC handlers for executable management (execute-external-program, check-file-exists, show-file-picker), process registry Map for tracking spawned processes, whitelist configuration for allowed directories and file extensions, path validation with symlink resolution, and async process cleanup on app exit with platform-specific signal handling.
+
+public/preload.js
+- Exposed secure executable APIs (executeExternalProgram, checkFileExists, showExecutablePicker) to renderer process via contextBridge.
+
+src/components/LevelEditor/TaskForm.jsx
+- Added executable path field with Browse button (file picker), Test button, and Clear button, applying to all task types with browser mode detection and appropriate messaging.
+
+src/components/Playing/Playing.js
+- Added executable execution in gotoNextTask() function that runs external programs non-blocking when tasks begin, with error handling that logs failures without disrupting gameplay.
+
+
+
+NEW FILES
+===================
+
+src/services/executableService.js
+- Service class for managing executable execution with Electron environment detection, browser fallback handling, and methods for selecting, testing, and running executables.
+
+scripts/
+- New directory where executable files are stored for running during gameplay.
+
+
+
+
+
+
+
+
+
+Revision 1 - Audio Pack Management UI Implementation
+=====================================================
+
+Implemented custom audio pack management, including state management, error handling, path normalization, and fixes for memory leaks. 
+Defined audio pack selection behavior:
+- Default levels use the currently selected audio pack from Content Library, with fallback to default audio files.*
+- Custom levels use their specified audio pack from level metadata, with fallback to the currently selected pack from Content Library, then default audio files.
+
+*NOTE: This behavior was defined, but not functional due to a bug. This is corrected in Revision 3.
+
+
+
+MODIFIED FILES
+==============
+
+package-lock.json
+- Regenerated **`npm`** lockfile (**lockfileVersion** 3) without edits to root **`package.json`** **`dependencies`**: the **`packages`** map shrinks overall but churns heavily—hundreds of nested paths added/removed and many **`version` / `resolved` / `integrity`** updates—dominated by **`@babel/*`** and related toolchain moving into the **7.27–7.28** release line plus nested dedupe layout changes from **`npm install`**.
+
+src/atoms/audioAtom.js
+- Added activePackIdAtom for reactive state management of the currently active audio pack.
+
+src/atoms/navAtom.js
+- Added AUDIO_PACK_EDITOR and CONTENT_LIBRARY navigation constants for the new UI components.
+
+src/services/levelManager.js
+- Added isDefaultLevel() helper function to check if a level is a default level.
+
+src/services/audioResolver.js
+- Added case-insensitive category matching function and updated resolveAudioReference to use case-insensitive matching when resolving audio references.
+- Updated resolveAudioReference() to accept optional fallbackPack parameter.
+- Added fallback pack resolution logic: tries primary pack, then fallback pack, then default AUDIO.
+- Updated getAudioFile() to support fallback pack parameter.
+
+src/services/storageService.js
+- Added object URL caching and cleanup system (revokePackUrls, extractPackId), checkFileExists function for duplicate detection, normalizeAudioPath helper with input validation, extractFilePath helper for custom-content URL parsing, and enhanced IndexedDB error handling with quota checking.
+
+src/services/audioManager.js
+- Added exportPack and importPack functions for ZIP-based pack sharing, updated setActiveCustomPack to sync with Jotai atom and cleanup object URLs, updated deletePack to revoke object URLs before deletion, added validateActivePack function for app load validation, fixed getAudioFile to properly handle arrays of custom-content URLs, and added PackIdConflictError custom error class for import conflict handling.
+- Added fallbackPack tracking variable and getFallbackPack() method.
+- Added setFallbackPack() method to set the fallback audio pack.
+- Updated getAudio(), getAudioFileSync(), and getAudioFile() to pass fallback pack to resolver.
+
+src/components/AudioPlayer.js
+- Refactored all useEffect hooks to properly handle async operations with cancellation logic, added Audio element cleanup to prevent memory leaks and overlapping playback, and updated to use async getAudioFile() consistently throughout.
+
+src/components/Training/Training.jsx
+- Added pack validation and auto-activation when a level is selected, with race condition prevention using cancellation tracking and early cancellation checks.
+- Modified handleSelectLevel() to implement new audio pack behavior: default levels do not change active pack (set fallback to default), custom levels with pack use level's pack as primary with currently selected pack as fallback, and custom levels without pack use currently selected pack with fallback to default.
+- Added import for storageService to access currently selected pack.
+
+src/components/LevelEditor/LevelEditor.jsx
+- Added Level ID display in Preview section for easy identification when using CLI, displayed in monospace font with light background for readability.
+- Removed disabled attribute from audio pack selector and updated label from "Audio Pack (coming soon):" to "Audio Pack:" to enable pack selection.
+- Changed dropdown option from "Default Audio Pack" to "Use Selected Audio".
+- Updated help text to explain behavior based on selection (specific pack vs. use selected audio).
+
+src/components/Navigation.js
+- Added navigation buttons for Audio Pack Editor and Content Library with appropriate icons and handlers, and reorganized menu layout into two rows: Row 1 (Help, Calibrate, Mic, Buttplug, Levels, Play) and Row 2 (Content Library, Audio Pack Editor, Edit Levels, Achievements).
+
+src/App.js
+- Added useEffect hook to call validateActivePack() after component mounts, and added routes for AudioPackEditor and ContentLibrary components in renderControls().
+
+
+
+NEW FILES
+===================
+
+src/store.js
+- Created Jotai store instance for updating atoms outside of React components, enabling reactive state management from service layer.
+
+src/components/AudioPackEditor/AudioPackEditor.jsx
+- Main component for creating and editing custom audio packs with metadata form, category management, file upload interface, and export/import functionality.
+- Fixed ESLint no-restricted-globals error by replacing confirm() with window.confirm() for explicit global access.
+
+src/components/AudioPackEditor/AudioCategoryEditor.jsx
+- Component for managing audio files within a single category, displaying keys and providing file upload and deletion capabilities.
+
+src/components/AudioPackEditor/AudioFileUploader.jsx
+- Reusable file upload component with drag-and-drop support, file size validation (10MB max), format validation (MP3/WAV only), automatic duplicate filename renaming, and IndexedDB quota checking.
+
+src/components/AudioPackEditor/AudioPackEditor.css
+- Styling for audio pack editor components to ensure consistent look and feel with the rest of the application.
+
+src/components/ContentLibrary/ContentLibrary.jsx
+- Main component for listing and managing all audio packs (default and custom) with activation, export, and delete functionality.
+- Fixed ESLint no-restricted-globals error by replacing confirm() with window.confirm() for explicit global access.
+
+src/components/ContentLibrary/AudioPackCard.jsx
+- Reusable card component for displaying audio pack information including metadata, active status indicator, and action buttons.
+
+src/components/ContentLibrary/ImportDialog.jsx
+- Modal dialog component for importing audio packs from ZIP files with conflict resolution (overwrite, rename, or cancel), progress indication, and error/warning display.
+
+src/components/ContentLibrary/ContentLibrary.css
+- Styling for content library components including grid layout for pack cards and modal dialog styling.

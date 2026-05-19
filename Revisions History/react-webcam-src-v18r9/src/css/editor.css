@@ -1,0 +1,22 @@
+/* Delete Button - Circular with X */
+.button-delete {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid #ff4444;
+    background-color: #ff4444;
+    color: white;
+    font-size: 20px;
+    line-height: 1;
+    padding: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+.button-delete:hover {
+    background-color: #ff3333;
+    border-color: #ff3333;
+}

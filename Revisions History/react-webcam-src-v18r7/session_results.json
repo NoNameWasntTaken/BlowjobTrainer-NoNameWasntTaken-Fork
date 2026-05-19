@@ -1,0 +1,17 @@
+{
+  "sessionId": "eb9a6551-bbf3-4df6-9ad6-b62a44944638",
+  "timestamp": "2026-01-21T19:37:22.712Z",
+  "levelId": "custom-1768960438318",
+  "levelTitle": "Unknown Level",
+  "completionStatus": "completed",
+  "completed": true,
+  "score": 0,
+  "totalTime": 0,
+  "sessionStats": {
+    "loads": 1,
+    "dives": 0,
+    "holdTime": 0,
+    "penalties": 0
+  },
+  "taskDetails": []
+}

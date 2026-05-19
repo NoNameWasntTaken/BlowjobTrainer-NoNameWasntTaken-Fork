@@ -1,0 +1,13 @@
+/* Utility: selected audio input (matches .button-primary fill from skeleton) */
+.u-audio-input-selected {
+    color: #fff;
+    background-color: #33c3f0;
+    border-color: #33c3f0;
+}
+
+.u-audio-input-selected:hover,
+.u-audio-input-selected:focus {
+    color: #fff;
+    background-color: #1eaedb;
+    border-color: #1eaedb;
+}

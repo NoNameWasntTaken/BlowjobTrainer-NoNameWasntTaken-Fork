@@ -1,0 +1,136 @@
+body {
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #ffffff;
+  /* background-color: #eee;
+  color: #282c34; */
+  /* color: #eee;
+  background-color: #282c34; */
+  box-sizing: border-box;
+}
+
+
+pre {
+  text-align: left;
+}
+
+* {
+  /* border: 1px solid rgba(255, 0, 0, 0.26); */
+}
+
+/* 
+.container {
+  max-width: 900px;
+  width: 100%;
+  margin: 0 auto;
+  padding-top: 1em;
+  display: flex;
+  flex-direction: column;
+} */
+
+.top-row {
+  display: flex;
+}
+
+.sidebar {
+  flex: 1;
+  padding: 1em;
+}
+
+.controls {
+  flex: 3;
+  padding: 1em;
+  overflow: hidden;
+}
+
+/* Main content styles */
+.content {
+  padding: 15px;
+}
+
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+img.avatar {
+  width: 300px;
+  border-radius: 8px;
+  border: 1 px solid #191b1f;
+  margin: auto;
+  display: block;
+}
+
+label {
+  margin: 10px;
+  padding: 10px;
+  vertical-align: middle;
+}
+
+input.controls {
+  font-family: monospace;
+  padding: 0.2em 0em 0.2em 0.5em;
+  margin: 10px;
+  width: 5em;
+}
+
+/* button {
+  padding: 6px 6px;
+  margin-left: 10px;
+  margin-right: 10px;
+} */
+
+.monospaced {
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.bold {
+  font-weight: bold;
+}
+
+/* 
+h4 {
+  margin-top: 8px;
+  margin-bottom: 8px;
+} */
+
+/* Marker-related styles moved to src/css/markers.css */
+
+li {
+  text-align: left;
+}
+
+.debug-state-display {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 1000;
+  max-width: 300px;
+  max-height: 400px;
+  overflow: auto;
+  pointer-events: none;
+}
+
+.debug-state-display pre {
+  margin: 0;
+  padding: 8px;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.6);
+  background-color: rgba(255, 255, 255, 0.7);
+  border-radius: 4px;
+}
+
+.play-time {
+  /* display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 38px;
+  padding: 0px 15px;
+  border-radius: 4px; */
+  background-color: #f5f5f5;
+  /* letter-spacing: .1rem;
+  text-transform: uppercase;
+  text-decoration: none; */
+}

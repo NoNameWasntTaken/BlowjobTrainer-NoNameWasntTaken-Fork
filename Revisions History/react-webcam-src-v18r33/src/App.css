@@ -1,0 +1,97 @@
+/* .App {
+  text-align: center;
+} */
+
+.App-link {
+  color: #61dafb;
+}
+
+/* Prevent horizontal overflow */
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  overflow-x: hidden;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
+
+.App {
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+  padding: 1rem;
+}
+
+/* Webcam preview max height comes from React (viewport slider × vh). */
+#video-container {
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 0 10px;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+
+
+/* Prevent body overflow */
+body {
+  overflow-x: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+/* Ensure all common elements stay within bounds */
+div,
+button,
+input,
+canvas {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+  #video-container {
+    padding: 0 5px;
+    margin-bottom: 10px;
+  }
+
+  .container {
+    padding: 0 5px;
+  }
+
+  /* Ensure buttons and controls don't cause overflow */
+  button {
+    max-width: 100%;
+    box-sizing: border-box;
+    word-wrap: break-word;
+  }
+
+  /* Prevent any flex containers from overflowing */
+  .row-centered,
+  .flex-wrap {
+    flex-wrap: wrap;
+    max-width: 100%;
+  }
+}
+
+/* Extra small screens (phones in portrait) */
+@media (max-width: 480px) {
+  #video-container {
+    padding: 0 2px;
+  }
+
+  .container {
+    padding: 0 2px;
+  }
+
+  /* Force smaller text and elements on very small screens */
+  button {
+    font-size: 14px;
+    padding: 8px 12px;
+  }
+}

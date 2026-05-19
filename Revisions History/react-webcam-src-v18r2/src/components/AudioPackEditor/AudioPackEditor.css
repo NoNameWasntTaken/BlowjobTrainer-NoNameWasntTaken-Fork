@@ -1,0 +1,24 @@
+.audio-pack-editor {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.editor-controls {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.audio-category-editor {
+    background-color: #f9f9f9;
+}
+
+.audio-category-editor h3 {
+    margin: 0;
+    padding: 8px 0;
+}
+
+.audio-file-uploader {
+    margin-top: 12px;
+}

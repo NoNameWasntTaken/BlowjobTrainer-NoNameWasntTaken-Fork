@@ -1,0 +1,47 @@
+.audio-pack-editor {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.editor-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.editor-controls label.button {
+    margin: 0;
+    padding: 0 5px;
+}
+
+.audio-category-editor {
+    background-color: #f9f9f9;
+}
+
+.audio-category-editor h3 {
+    margin: 0;
+    padding: 8px 0;
+}
+
+.audio-file-uploader {
+    margin-top: 12px;
+}
+
+.category-group {
+    margin-bottom: 32px;
+}
+
+.category-group-heading {
+    font-size: 1.2em;
+    font-weight: 600;
+    color: #333;
+    margin: 24px 0 16px 0;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #ddd;
+}
+
+.category-group:first-child .category-group-heading {
+    margin-top: 0;
+}
