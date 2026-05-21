@@ -1213,7 +1213,7 @@ src/components/Mic/Mic.css
 
 New task type for custom levels: "Speak". Configure short, repeating phrases, or longer statements broken down by sentences. Say what you're told to say in order to progress. Mileage may vary with speech recognition.
 
-Audio configuration now allows for selecting external audio inputs, not just the default system microphone. Recommend a webcam microphone for the "Speak" task, especially when used with background tracks (speech recognition becomes unusable on the system microphone when background tracks are playing).
+Audio configuration now allows for selecting external audio inputs, not just the default system microphone. I recommend a webcam microphone for the "Speak" task, especially when used with background tracks (speech recognition becomes unusable on the system microphone when background tracks are playing).
 
 
 
