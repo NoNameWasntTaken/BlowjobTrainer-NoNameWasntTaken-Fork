@@ -1,13 +1,15 @@
 # Revision 34 - Webcam Photo and Video Captures
 
 Adds optional functionality for the webcam to capture .jpg and .mp4 footage during gameplay. The level will attempt to time its captures based on the task type to show off your skills. Decide if you want a notification of a capture occuring; leave them enabled for extra embarrassment, or set them to hidden for anticipation of never knowing if you're being recorded. This is a potentially controversial feature, so several safeguards were put in place to ensure that captures cannot be taken without explicit user permission:
+
 - This feature is only available in the electron-packaged version of the application; web-only builds will never take captures.
 - Several flags must be enabled before captures may be taken; a profile-specific flag, a level-specific flag, and a final confirmation checkbox on the "Play" tab before starting a level.
 - Default levels and the default profile are hard-coded to disable captures; a capture may only occur in a custom level with a custom profile that have explicitly enabled captures.
 - Tasks have captures disabled by default; each task must manually enable captures of their available types to take captures even if all of the above requirements are met.
 - Hidden notifications have their own profile-specific flag, level-specific flag, and configuration settings to ensure that notifications are always displayed unless the user explicitly allows them to be hidden.
 
-Two new CLI parameters have been added; 
+Two new CLI parameters have been added;
+
 - '--enable-captures' replaces the final confirmation checkbox to enable captures when launching the application through CLI
 - '--capture-output' designates an output folder for saved captures separate from the level summary .json file. This parameter is optional; if omitted, the level's default capture location is used, which itself defaults to the same directory of the level summary .json.
 
@@ -159,6 +161,7 @@ The "Load Existing Level" block was updated to include an optional filter by cus
 A new clipboard function was added to tasks in the custom level editor. Beneath the buttons that reorder tasks, a "Copy" button was added – press this button to copy the existing task and configuration data to the clipboard. Use the new task list option "+ Paste {Task}" to append that task type and configuration to the end of the level. Use the "(Clear Clipboard)" option to remove the current task from the clipboard, or copy a different task to overwrite the clipboard.
 
 Extended Buttplug.io integration to include the following task behaviors:
+
 - Clap: Increases vibration by 0.05 per successful clap.
 - Rest: Sets vibration to 0.1 when balls bonus is enabled and being earned
 - Speak: Increases vibration 0.05 for each sentence segment in long mode, or 0.1 for each phrase in short mode.
@@ -235,6 +238,7 @@ src/atoms/levelEditorTaskClipboardAtom.js
 # Revision 32 - Camera Preview Size Control, Custom Voice Categories Expansion
 
 A new slider under the camera controls now sets the relative size of the webcam preview. This allows the user to expand it for easier grid drawing or shrink it for better gameplay viewing. The preview size is exported/imported with calibration.
+
 Custom audio packs now have 40 custom categories, up from 20.
 
 
@@ -284,9 +288,12 @@ src/constants/customVoiceCategories.js
 # Revision 31 - Headless Mode Parameter Conversion; "Autostart"
 
 Due to a conflict with Chromium's built-in "--headless" parameter, the app-specific "--headless" CLI parameter has been renamed to "--auto-start". This improves compatibility when launching the application via third-party processes.
+
 The "--auto-start" parameter (formerly "--headless") now explicitly requires the "--level" parameter to be included in order to function. Refer to "ExternalDocumentation.txt" for more info.
 The application title and a pause/play button are now included above the camera feed when using the "--auto-start" parameter. This allows the user to pause the level in autostart mode - this was not possible before, which was a significant oversight. Whoops.
+
 Cancelling a level when running the application in external mode (via passing the "--level" parameter, including when "--auto-start" is passed) will now close the application with exit code 1 rather than returning to the level selection screen. This should avoid situations where the user is free to choose a new level to complete in place of the assigned level.
+
 Some under-the-hood changes to the autostart functionality, bringing it closer in-line to the standard level start path for parity.
 
 
@@ -351,6 +358,7 @@ src/components/ExternalMode/AutoStartCameraChrome.jsx
 # Revision 30 - Session Results Rank Export
 
 The session results .json file now includes 'performanceRank', which indicates the rank of a completed level. Values 'perfect', 'good', 'pass', and 'failed' reflect their corresponding ranks, while a value of 'none' returns for all other cases (such as calibration or errors). This change also comes with a small refactoring of rank evaluation to ensure rank and total play time are included and correct in export results.
+
 Updated "ExternalDocumentation.txt" to remove a misleading note about the '--profile' parameter.
 
 
@@ -385,10 +393,11 @@ src/utils/sessionEndRank.js
 # Revision 29 - Endless Task Voice Support
 
 Small changes and QOL improvements to Endless task configuration, including:
-    - The score events "Add Grace" and "Run Script" now support their own voice lines, with a default value of none (maintaining backwards compatibility).
-    - All score events now support custom voice line categories, using the same checkmark for "Show Custom Voice Lines" as the base voice lines of all tasks.
-    - The delete button for score events (the red 'X') has been moved to be in-line with the "Min+ Score" and "Max+ Score" selectors.
-    - The dropdown selector for score events has been reordered; "Add Grace" is now above "Run Script"
+
+- The score events "Add Grace" and "Run Script" now support their own voice lines, with a default value of none (maintaining backwards compatibility).
+- All score events now support custom voice line categories, using the same checkmark for "Show Custom Voice Lines" as the base voice lines of all tasks.
+- The delete button for score events (the red 'X') has been moved to be in-line with the "Min+ Score" and "Max+ Score" selectors.
+- The dropdown selector for score events has been reordered; "Add Grace" is now above "Run Script"
 
 
 
@@ -456,15 +465,19 @@ src/hooks/useSpeakRecognitionGate.js
 # Revision 27 - Clap Detection Improvements, Endless Task Balance Changes, Bug Fixes
 
 Clap detection has been made slightly stricter, requiring a spike in high-band frequency above the baseline value from previous frames in order to register a successful clap. This should reduce the instances of constant background noise (such as from fans) triggering claps constantly without user input.
+
 Endless tasks have received the following changes:
-    - Holds at depth 4 score per second has been reduced from 4 to 3.
-    - Dives have been reworked to calculate bonuses on a per-dive basis, rather than across the 5 most recent dives. Consistent dives should now award higher score than before. 
-        - The score feed now reflects the new dive bonuses, rather than just their base scores.
-    - Scoring thresholds for perfect / pass rank was reduced from 1.3 / 0.7 to 1.1 / 0.6, respectively. This should make it easier to pass the task.
+
+- Holds at depth 4 score per second has been reduced from 4 to 3.
+- Dives have been reworked to calculate bonuses on a per-dive basis, rather than across the 5 most recent dives. Consistent dives should now award higher score than before.
+  - The score feed now reflects the new dive bonuses, rather than just their base scores.
+- Scoring thresholds for perfect / pass rank was reduced from 1.3 / 0.7 to 1.1 / 0.6, respectively. This should make it easier to pass the task.
+
 Bug fixes to the following issues:
-    - Leaving the audio tab while background music is playing now cuts off the music immediately rather than waiting for the configured fade-out duration, matching behavior in Revision 25.
-    - Hold scores in Endless dives are now rounded to the nearest tenth of a point, matching other scores in the score feed.
-    - The "↔" button above the depth diagram now works again.
+
+- Leaving the audio tab while background music is playing now cuts off the music immediately rather than waiting for the configured fade-out duration, matching behavior in Revision 25.
+- Hold scores in Endless dives are now rounded to the nearest tenth of a point, matching other scores in the score feed.
+- The "↔" button above the depth diagram now works again.
 Various small UI text changes for consistency.
 
 
@@ -534,8 +547,10 @@ src/hooks/useColorSampling.js
 
 # Revision 25 - Midway Voice In Custom Hold Tasks, Camera Preview Rotation, Calibration JSON Extensions
 
-Custom levels used to never use midway audio voice lines (such as 'Hold.*_HALFWAY' and 'Hold.*_3Q'), whereas default levels usually had these configured. The hold tasks in custom levels now have customizable midway voice line selection, defaulting to the corresponding 'HALFWAY' and '3Q' voice lines. Custom voice categories can also be chosen for midway voice lines by toggling the same 'Show Custom Voice Lines' option as for the main voice lines.
+Custom levels used to never use midway audio voice lines (such as 'Hold.\*_HALFWAY' and 'Hold.\*_3Q'), whereas default levels usually had these configured. The hold tasks in custom levels now have customizable midway voice line selection, defaulting to the corresponding 'HALFWAY' and '3Q' voice lines. Custom voice categories can also be chosen for midway voice lines by toggling the same 'Show Custom Voice Lines' option as for the main voice lines.
+
 A rotation button was added under the 'Camera On/Off' toggle, only visible when the camera is on. Pressing the button rotates the camera preview 90 degrees. Active grid placements will rotate with the camera preview. Most cameras capture a wider area rather than a taller one, so the overall camera viewport size has been increased by 10% to make 90-degree and 270-degree rotations more workable.
+
 Calibration data has been extended to include audio volume sliders, camera rotation values, and the active camera and audio devices. The aim is to make calibration import more consistent when loading sessions through CLI input. If a camera or audio device isn't found when importing from calibration data, that part of the calibration is ignored.
 
 
@@ -609,7 +624,8 @@ src/utils/previewToBufferCoords.js
 
 # Revision 24 - Bug and Warning Fixes
 
-Actually fixed gameplay issue where pausing a level and switching to the Audio tab breaks background music and speech detection (this was listed in Revision 23, but was not fully fixed)
+Actually fixed gameplay issue where pausing a level and switching to the Audio tab breaks background music and speech detection (this was listed in Revision 23, but was not fully fixed).
+
 Fix for linter warnings regarding exhaustive dependencies in the custom level editor screen,
 
 
@@ -633,16 +649,21 @@ src/components/LevelEditor/LevelEditor.jsx
 # Revision 23 - Level Prerequisites, Custom Level Subfolders, and Bug Fixes
 
 Levels can now have prerequisites; a level may require previous levels to be completed before they become available. If the level's prerequisites have not been met, attempting to select the level will display the missing level completion requirements and minimum rank of those levels.
-    - Default levels have a predetermined order of availability; it generally goes in numerical order, but there is some branching. "Beginner Training" is unlocked by default, and must be completed first to unlock other levels. "Intermediate Challenge" serves as the gateway to more intense levels. Check the default levels for individual prerequisites.
-    - Custom levels can have their prerequisites customized. A custom level's prerequisites may include default levels or other custom levels. Deleting a custom level automatically removes it as a requirement from any other custom level that required it. Invalid requirements (due to a missing or invalid level) are ignored.
-    - The default profile now includes the option "Bypass Level Requirements", which can be enabled to ignore level prerequisites and play any level immediately. However, enabling this option will also disable stat tracking and achievement progression. Completing a level with this setting enabled will not contribute towards prerequisites for levels.
-    - New help text under the "Track Stats and Achievements" section notes that level progression is only tracked when enabled. 
+- Default levels have a predetermined order of availability; it generally goes in numerical order, but there is some branching. "Beginner Training" is unlocked by default, and must be completed first to unlock other levels. "Intermediate Challenge" serves as the gateway to more intense levels. Check the default levels for individual prerequisites.
+- Custom levels can have their prerequisites customized. A custom level's prerequisites may include default levels or other custom levels. Deleting a custom level automatically removes it as a requirement from any other custom level that required it. Invalid requirements (due to a missing or invalid level) are ignored.
+- The default profile now includes the option "Bypass Level Requirements", which can be enabled to ignore level prerequisites and play any level immediately. However, enabling this option will also disable stat tracking and achievement progression. Completing a level with this setting enabled will not contribute towards prerequisites for levels.
+- New help text under the "Track Stats and Achievements" section notes that level progression is only tracked when enabled. 
+
 Custom levels have a new subfolder system for categorization. A custom level can be assigned to a subfolder for organization based on user preferences. 
-    - The names of each subfolder can be customized at the bottom of the "Edit Levels" tab; the folder names are global across all levels and profiles. 
-    - A subfolder with no levels assigned to it will be hidden automatically to reduce visual clutter. If only one subfolder has levels assigned to it, the entire subfolder navigation bar is hidden, as if no subfolders exist.
+- The names of each subfolder can be customized at the bottom of the "Edit Levels" tab; the folder names are global across all levels and profiles. 
+- A subfolder with no levels assigned to it will be hidden automatically to reduce visual clutter. If only one subfolder has levels assigned to it, the entire subfolder navigation bar is hidden, as if no subfolders exist.
+
 Gameplay fix for the microphone not coming back online after pausing a level, changing tabs, and then resuming the level.
+
 UI fix for the achievemnt "Oral Service" displaying '# / 7' instead of '# / 12' (the actual number was always 12, this was just a visual bug).
+
 Hold times are now displayed to tenths of a second in the Profiles tab, specifically the 'Hold Time Stats' and 'Achievements' sections. 
+
 Small UI tweak in the Voice Pack Editor; the "Save Pack" button is now blue, similar to the "Save Level" button in the Edit Levels tab.
 
 
@@ -750,11 +771,12 @@ src/components/Training/LevelPrerequisitesModal.jsx
 # Revision 22 - Further Speak Task Refinements
 
 Additional Speak task refinements, which finally make the Speak tasks usable in my opinion. These include:
-    - Using a dash '-' within brackets can indicate that the word is optional. For example, "[boo, blue, -] school" will accept the phrase "boo school", "blue school", or just "school"
-    - A new UI element displays the last 10 unsuccessful utterances. Useful for debugging speech configuration in test tasks, and identifying misses in general.
-    - Fuzzy matching for alternative in brackets words, allowing for a degree of flexibility for near-misses in known areas of difficulty.
-    - Optional endpoint fuzzy matching for the entire spoken segment, which can be enabled per-task in the custom level editor.
-    - General responsivness improvements under the hood to reduce instances of the first words spoken being cut off.
+
+- Using a dash '-' within brackets can indicate that the word is optional. For example, "[boo, blue, -] school" will accept the phrase "boo school", "blue school", or just "school"
+- A new UI element displays the last 10 unsuccessful utterances. Useful for debugging speech configuration in test tasks, and identifying misses in general.
+- Fuzzy matching for alternative in brackets words, allowing for a degree of flexibility for near-misses in known areas of difficulty.
+- Optional endpoint fuzzy matching for the entire spoken segment, which can be enabled per-task in the custom level editor.
+- General responsivness improvements under the hood to reduce instances of the first words spoken being cut off.
 
 
 
@@ -813,6 +835,7 @@ src/constants/speakAudio.js
 # Revision 21 -  Speak Task Improvements and AudioPlayer Hotfix
 
 Speak tasks now support word options in required phrases. Use a comma-separated list in brackets '[]' to sepcify alternative words that may be accepted in place of that word. For example, "It can [suck, duck] the water out" will allow for either "It can suck the water out" or "It can duck the water out" to be accepted. Useful when speech recognition doesn't cooperate.
+
 Hotfix for an issue where packaged electron builds would see a blank screen when starting the calibration test.
 
 
@@ -838,7 +861,9 @@ src/components/AudioPlayer.js
 # Revision 20 - Profile Naming Prompt Fix, UI Tweak.
 
 Fixed an issue with the electron-packaged app where new profiles could not be created due to the browser's prompt window not working correctly. A custom prompt was added to the profile manager as a workaround.
+
 Updated initial loading behavior to wait until speech recognition pipeline is ready before showing UI. This may result in longer times in the intial "Loading" state, but prevents significant delays in navigating between tabs on startup.
+
 Changed the color of the "Save Level" button to blue in the custom level editor.
 
 
@@ -874,11 +899,13 @@ src/constants/stringsreplace.js
 # Revision 19 - Profile Management
 
 The "Achievements" tab has been updated to the "Profiles" tab. Create new empty profiles or clone existing ones. Each profile tracks stats and achievements independently from each other. Use the included toggle "Track Stats & Achievements" to enable/disable tracking stats outside of gameplay.
+
 A new CLI parameter "--profile" was added to automatically load a selected profile when running the application externally. Falls back to the default profile when not specified.
 Small tweaks to Endless tasks:
-    - Score values earned from endless tasks now round to the nearest whole point value.
-    - Hold time values now round to the nearest tenth of a second.
-    - Hold time and depth UI does not appear until at least 3 seconds of a continuous hold have passed.
+
+- Score values earned from endless tasks now round to the nearest whole point value.
+- Hold time values now round to the nearest tenth of a second.
+- Hold time and depth UI does not appear until at least 3 seconds of a continuous hold have passed.
 
 
 
@@ -978,19 +1005,25 @@ src/components/Achievements/ProfileManager.jsx
 # Revision 18 - Session Summary Voice, Speech Model Upgrade, Cleanup and Polish
 
 Session summary voice selection was overhauled; feedback is no longer bound solely to the "Rank" category. This manifests differently for default and custom levels:
-    - Default levels: when an "END" or "END_*" entry exists in the "Level" audio category, that voice line is used instead of the default Rank categories. This includes Level 1 "Beginner Training", Level 2 "Quick Blow and Go", and Level 4 "Cock Worship 101" (perfect rank only). Levels that were flagged as `soft` still use soft summary lines, where applicable.
-    - Custom levels: a new "Session Summary Voice" section was added under the task list. Per-rank voice lines can now be picked independently from any line used in session summary feedback, with defaults map to the standard "Rank.END_*" categories. An optional "Show Custom Voice Lines" flag can be enabled to use custom voice categories instead, mirroring task custom-voice behavior.
+
+- Default levels: when an "END" or "END_*" entry exists in the "Level" audio category, that voice line is used instead of the default Rank categories. This includes Level 1 "Beginner Training", Level 2 "Quick Blow and Go", and Level 4 "Cock Worship 101" (perfect rank only). Levels that were flagged as `soft` still use soft summary lines, where applicable.
+- Custom levels: a new "Session Summary Voice" section was added under the task list. Per-rank voice lines can now be picked independently from any line used in session summary feedback, with defaults map to the standard "Rank.END_*" categories. An optional "Show Custom Voice Lines" flag can be enabled to use custom voice categories instead, mirroring task custom-voice behavior.
 Speech model ASR bundle was upgraded to a larger, more accurate version. Both models are available in `public/models/sml`(original) and `public/models/lrg`(current, default). Swap between them by copying the respective `asr` and replacing the `public/asr` folder as needed.
+
 The CLI parameter '--audio-pack' now overrides the level's selected voice pack, provided the CLI's specified audio pack exists. Behavior is now consistent with the background track CLI parameter. 'ExternalDocumentation.txt' was updated accordingly.
+
 UI polish updates, including:
-    - Level Editor tab: removed "Soft Mode" toggle in level metadata (made redundant with customizable session summary audio).
-    - Level Editor tab: Background Music dropdown shows contextual help text, similar to the Voice Pack dropdown. 
-    - Audio tab: removed duplicate "System Default" mic button (default route remains in the list).
-    - Play tab: Clicking "Begin" now updates the button to show a loading state while level initialization is in progress.
+
+- Level Editor tab: removed "Soft Mode" toggle in level metadata (made redundant with customizable session summary audio).
+- Level Editor tab: Background Music dropdown shows contextual help text, similar to the Voice Pack dropdown. 
+- Audio tab: removed duplicate "System Default" mic button (default route remains in the list).
+- Play tab: Clicking "Begin" now updates the button to show a loading state while level initialization is in progress.
+
 Bug fixes, including:
-    - Fixed an issue where the first task's voice line was being cut off.
-    - Fixed an issue with level state not clearing properly when navigaing away from the summary tab at the end of a level.
-    - Fixed a linter warning on exhaustive dependencies on 'useSpeakRecognitionGate.js'
+
+- Fixed an issue where the first task's voice line was being cut off.
+- Fixed an issue with level state not clearing properly when navigaing away from the summary tab at the end of a level.
+- Fixed a linter warning on exhaustive dependencies on 'useSpeakRecognitionGate.js'
 
 
 
@@ -1073,15 +1106,20 @@ src/utils/musicPlaybackSessionStore.js
 # Revision 17 - Speech Test, Endless Task Holds, and Bug Fixes
 
 Added speech recognition test to the Audio tab, under the Clap Calibration section. These tests are mutually exclusive - running the speech test will automatically disable the clap test. Use the speech test to check that speech recognition is working, and see the output for speaking certain phrases; this may be helpful for configuring Speak tasks.
+
 Reworked parts of the speech detection pipeline to improve readiness, including more preloading of the PCM worklet when possible, and added UI messages to better indicate the current state of the pipeline.
+
 Adjusted UI of the Audio tab for better organization and readability.
+
 Partially reverted stricter hold scoring on Endless tasks; after establishing a target depth, you can go one level deeper without cancelling the hold completely, earning 25% of the score of the original depth's rate (similar to time calculations on Hold tasks). Maintain a consistent depth for the most points.
+
 Added target hold depth to Endless task UI during holds, to align with the previous change for hold scoring.
 Bug fixes for the following issues:
-    - Adjusting the volume of background tracks while the background track test was running no longer causes an uncaught runtime error.
-    - Uploading multiple files on the first try now displays all uploaded files correctly in the Voice Pack Editor.
-    - Hit Depth when target depth = 1 should no longer trigger hitFailed() when target depth is 1, making it consistent with Hold tasks when target depth = 1
-    - Hit.ONE is now selectable as an audio event for Hit Depth tasks in the Custom Level Editor.
+
+- Adjusting the volume of background tracks while the background track test was running no longer causes an uncaught runtime error.
+- Uploading multiple files on the first try now displays all uploaded files correctly in the Voice Pack Editor.
+- Hit Depth when target depth = 1 should no longer trigger hitFailed() when target depth is 1, making it consistent with Hold tasks when target depth = 1
+- Hit.ONE is now selectable as an audio event for Hit Depth tasks in the Custom Level Editor.
 
 
 
@@ -1174,6 +1212,7 @@ src/components/Mic/Mic.css
 # Revision 16 - Speak Task
 
 New task type for custom levels: "Speak". Configure short, repeating phrases, or longer statements broken down by sentences. Say what you're told to say in order to progress. Mileage may vary with speech recognition.
+
 Audio configuration now allows for selecting external audio inputs, not just the default system microphone. Recommend a webcam microphone for the "Speak" task, especially when used with background tracks (speech recognition becomes unusable on the system microphone when background tracks are playing).
 
 
@@ -1287,17 +1326,25 @@ public/asr/
 
 # Revision 15 - Background Music
 
-Background music: you can now play background music during levels. 
-    - Import/manage background tracks in Content Library.
-    - Tune background audio on a separate channel from SFX and Voice lines, adjust fade in/out options, and test levels compared to SFX and Voice.
-    - New optional CLI input option "--background-music" to overwrite background music when launching via CLI.
-    - Custom levels can be configured to override background tracks - useful to avoid repeated configuration or specifying when launching a level via CLI. The option "Use selected audio" will default to the content library's selected background, while "None" manually disables background music for that level. (Note; if specified, "--background-music" parameter will override level-configured music).
+Background music: you can now play background music during levels.
+
+- Import/manage background tracks in Content Library.
+- Tune background audio on a separate channel from SFX and Voice lines, adjust fade in/out options, and test levels compared to SFX and Voice.
+- New optional CLI input option "--background-music" to overwrite background music when launching via CLI.
+- Custom levels can be configured to override background tracks - useful to avoid repeated configuration or specifying when launching a level via CLI. The option "Use selected audio" will default to the content library's selected background, while "None" manually disables background music for that level. (Note; if specified, "--background-music" parameter will override level-configured music).
+
 Renamed many references of "Audio Pack" to "Voice Pack" to distinguish them from background audio.
+
 Clap detection was overhauled to use AudioWorklet LMS to filter out background music, improving clap detection reliability when background music is playing. This also sets the groundwork for a planned future feature.
-    - NOTE: The microphone is now enabled throughout the level, not just during "Clap" and "HoldAndClap" tasks, for smoothness with background tracks. The actual behavior of these tasks is unaffected.
+
+- NOTE: The microphone is now enabled throughout the level, not just during "Clap" and "HoldAndClap" tasks, for smoothness with background tracks. The actual behavior of these tasks is unaffected.
+
 Additional "Clap Test On/Off" button in the "Calibrate Clap Detection" section of the "Audio Tab"
-Updated "Balls region" grids to use the same "Buffer" value as shaft depth calculations (originally left out by choice, but this made balls coverage too unreliable in practice)
+
+Updated "Balls region" grids to use the same "Buffer" value as shaft depth calculations (originally left out by choice, but this made balls coverage too unreliable in practice).
+
 Corrected a couple of typos throughout UI.
+
 Fixed long-standing bug in session summary section, where achievements were listed as newly unlocked when they had already been earned.
 
 
@@ -1431,13 +1478,18 @@ src/services/gameplayMicSession.js
 # Revision 14 - Custom Audio Categories, UI Cleanup
 
 Added new audio category "Custom" with 20 configurable sub-categories. Each sub-category can be given its own display name for readability in the Custom Level Editor window.
+
 Added "Show Custom Voice Lines" checkbox to tasks in the Custom Level Editor window, disabled by default. When checked, shows all custom audio subcategories by display name. A custom audio subcategory with no files is never displayed in the dropdown menu, to reduce clutter.
+
 Various UI cleanup and reorganization in the Custom Level Editor, including:
-    - Removed "Rest Ball" task type from task selection in the Custom Level Editor window; this was leftover from Revision 13. All "Rest Ball" tasks should be treated as "Rest" tasks.
-    - "Get Ready" and "Finish" tasks now have only one "Time" field.
-    - "Rest" time limit was renamed "Time" for consistency.
-    - "Hit Depth" and "Clap" tasks now have auto-calculated time limits for consistency with "Hold" and "Hold and Clap" tasks.
+
+- Removed "Rest Ball" task type from task selection in the Custom Level Editor window; this was leftover from Revision 13. All "Rest Ball" tasks should be treated as "Rest" tasks.
+- "Get Ready" and "Finish" tasks now have only one "Time" field.
+- "Rest" time limit was renamed "Time" for consistency.
+- "Hit Depth" and "Clap" tasks now have auto-calculated time limits for consistency with "Hold" and "Hold and Clap" tasks.
+
 Recategorized "Rest" as a task assignment category in the Audio Pack Editor window.
+
 Moved "Calibration.Ball" to the bottom of the Calibration section.
 
 
@@ -1534,8 +1586,11 @@ src/services/audioManager.js
 # Revision 13 - Balls Grid Feature 
 
 New 'Balls Grid' feature: Set a grid to cover the 'balls' region. This allows for bonus points to be earned during rest by covering a percentage of the 'balls' grid, but only if the rest task is configured to allow this. Disabled by default, unused in default levels - create custom levels to use this function. Instructions and calibration screen have been tweaked accordingly.
+
 Updated Endless tasks; balls bonus is enabled when a balls grid is configured, holds are calculated more strictly.
+
 Small tweak to set grid calibration view to "All Grids" automatically when starting a level, ensuring that all grids are active during gameplay.
+
 Version incrementation now includes revision number.
 
 
@@ -1585,7 +1640,9 @@ src/components/Playing/RestBallsBonus.js
 # Revision 12 - Custom Level Editor Loading Tweaks, Back-End Audio Improvements
 
 The "Load Existing Level" dropdown in the Custom Level Editor now sorts custom levels by level number (order) instead of level ID.
-Audio references migrated from resolved path arrays to Category.KEY strings; eliminates brittle reverse lookup for default levels. 
+
+Audio references migrated from resolved path arrays to Category.KEY strings; eliminates brittle reverse lookup for default levels.
+
 Audio resolution encapsulated entirely within audioManager; fallbackPack and activeCustomPack are never passed as parameters from external callers.
 
 
@@ -1625,12 +1682,16 @@ src/services/audioResolver.js
 # Revision 11 - Custom Level Editor Improvements, Endless Task Changes, Mirror Mode, Bug Fixes
 
 Added several quality-of-life features to the custom level editor; a second task addition bar at the bottom of the task list, task numbers, reordering score events in endless tasks, fast-flow into next task, and level difficulty overrides.
+
 Completely reworked the Endless task; grace period time has been significantly increased, UI element now shows grace period time, score log is limited to last 5 events, endless task state persists when pausing the level.
+
 Mirror mode implemented; when toggled on, flips the screen while level is active. Use this when facing a mirror to read the UI without turning around.
+
 Bug fixes:
-    - Suppressed feedback audio while task instruction is playing; instruction is no longer cut off when starting a new task at the incorrect depth / tempo.
-    - Depth changes are now processed even if the webcam screen is out of view.
-    - Fixed duplicate score events artificially inflating score gains in the "UpAndDown" task. 
+
+- Suppressed feedback audio while task instruction is playing; instruction is no longer cut off when starting a new task at the incorrect depth / tempo.
+- Depth changes are now processed even if the webcam screen is out of view.
+- Fixed duplicate score events artificially inflating score gains in the "UpAndDown" task. 
 
 
 
@@ -1750,6 +1811,7 @@ src/components/MirrorToggle.js
 
 Fixed tasks not updating hold time / dive count when target depth was reached; effected HoldDepth, HitDepth, Diving, and Endless
 Fixed Endless.ENDLESS and Lvl_begint.START sharing the same audio paths.
+
 Updated HoldAndClap to use periodic feedback (every 4-6 claps) matching the Clap task.
 
 
@@ -1788,10 +1850,15 @@ src/components/Playing/HoldAndClapDetector.js
 # Revision 9 - Electron Audio Pack Export Fix and Camera Toggle Feature
 
 Added camera toggle feature allowing users to turn the camera feed on or off from most non-playing tabs.
+
 Fixed audio pack export in packaged Electron builds - now uses the same pattern as calibration export. Browser behavior unchanged.
+
 Corrected CLI arguments not being passed and handled correctly.
+
 Fixed endless task score events to calculate event thresholds relative to the last event and prior session score, rather than absolute session score.
-Added some sound types to the sound list for score events in endless tasks
+
+Added some sound types to the sound list for score events in endless tasks.
+
 Corrected alignment on "Import Pack" button in the Audio Pack Editor.
 
 
@@ -1874,10 +1941,15 @@ src/services/audioPackExportService.js
 # Revision 8 - New Tasks, Custom Level Reorganization, and UI Tweaks
 
 Added Hold and Clap task combining depth hold with clap detection during holds.
+
 Implemented full Endless task with hold/dive scoring, clap detection during holds, rhythm and depth consistency bonuses, grace period and surface penalties, and score-triggered events.
-Moved custom levels to their own tab for organization, and added difficulty ratings auto-calculated for both default and custom levels
-Moved SFX and audio sliders to the "Mic" tab, which was renamed "Audio"
+
+Moved custom levels to their own tab for organization, and added difficulty ratings auto-calculated for both default and custom levels.
+
+Moved SFX and audio sliders to the "Mic" tab, which was renamed "Audio".
+
 Made various tweaks to UI for calibration, audio, and custom level management.
+
 Corrected a bug where time was not being tracked for achievements.
 
 
@@ -1959,6 +2031,7 @@ src/components/Playing/endlessScoring.js
 # Revision 7 - Audio Channel Separation and Electron Protocol Fix
 
 Separated SFX and voice audio into independent playback channels so voice lines are no longer interrupted by SFX, and added separate volume sliders on the Calibration screen.
+
 Fixed the app:// protocol handler to decode URI path segments so audio files with spaces load correctly in the packaged Electron build.
 
 
@@ -2020,6 +2093,7 @@ public/electron.js
 # Revision 5 - Multi-Grid Support and Audio Pack Editor Enhancements
 
 Implemented multi-grid calibration system allowing users to create and manage multiple independent calibration grids, each with its own base color and sensitivity settings. 
+
 Enhanced audio pack editor with improved organization, per-subcategory upload buttons, and audio playback testing functionality.
 
 
@@ -2107,6 +2181,7 @@ src/utils/gridUtils.js
 # Revision 4 - CLI Integration and Calibration Enhancements
 
 Implemented complete CLI integration system allowing external programs to launch the application, allowing them to set up calibration and run individual levels.
+
 Additional utility features include calibration data management, session result export, and comprehensive error handling with exit codes.
 
 
@@ -2267,7 +2342,9 @@ scripts/
 # Revision 1 - Audio Pack Management UI Implementation
 
 Implemented custom audio pack management, including state management, error handling, path normalization, and fixes for memory leaks. 
+
 Defined audio pack selection behavior:
+
 - Default levels use the currently selected audio pack from Content Library, with fallback to default audio files.*
 - Custom levels use their specified audio pack from level metadata, with fallback to the currently selected pack from Content Library, then default audio files.
 
