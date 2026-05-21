@@ -32,6 +32,9 @@ public/preload.js
 src/atoms/playerProfilesModel.js
 - Profile shape supports **`allowsCaptures`**, **`allowsHiddenCaptures`** (non-default authoring data; defaults preserve prior behaviour).
 
+src/App.js
+- Imports and renders **`CaptureStatusIcons`** alongside **`AudioPlayer`**, **outside** the **`scaleX(-1)`** mirror wrapper around **`renderControls()`**, so the capture HUD's **`position: fixed`** anchor (bottom-right viewport) is not broken when mirror mode is active during play.
+
 src/components/Achievements/ProfileManager.jsx
 - For **non-default** profiles only: new **`card-row`** sections **Allow Webcam Captures** and **Allow Hidden Capture Notifications** (each heading + checkbox + disabled when **`sessionLocked`**) with **`toggleAllowsCaptures`** / **`toggleAllowsHiddenCaptures`** merging into **`playerProfilesAtom`** via **`setPp`**.
 - Shared **`PROFILE_OPTION_HELPER_TEXT_STYLE`** object (**`marginTop: '-1.5rem'`**, tighter typography / **`maxWidth`**) applied to helper **`<p>`** blocks under stats tracking, bypass, and both capture rows so stacked headings + copy read as one unit.
@@ -68,7 +71,7 @@ src/components/Playing/HoldDepth.js
 - **`onSignalCaptureWindow`** when dwell state meets depth/time prerequisites for Holds.
 
 src/components/Playing/Playing.js
-- Imports **`captureService`**, **`useCaptureManager`**, **`captureSessionAtom`**, **`CaptureStatusIcons`**, **`INITIAL_CAPTURE_SESSION`**; derives **`captureGate`**, **`levelForCapture`**, **`signalCaptureWindow`**, passes hooks into detectors/Rest composites, resets atom on transitions, **`useEffect`** for Finish-task capture signalling, awaits safe recording teardown via hook helper.
+- Imports **`captureService`**, **`useCaptureManager`**, **`captureSessionAtom`**, **`INITIAL_CAPTURE_SESSION`**; derives **`captureGate`**, **`levelForCapture`**, **`signalCaptureWindow`**, passes hooks into detectors/Rest composites, resets atom on transitions, **`useEffect`** for Finish-task capture signalling, awaits safe recording teardown via hook helper. **`CaptureStatusIcons`** render removed (HUD hoisted to **`App.js`** outside the mirror transform wrapper).
 - **`levelForCapture`** **`useMemo`**: merges full canonical **`tasks`** from **`levelManager.getLevel`** (not the shrunk **`currentLevel.tasks`** on the final task) so capture preflight and channel availability stay valid for the whole level.
 - **`capturesTakePhotosCheckboxEligible`** (packaged app + **`runCapturesPreflight`**, excluding external/auto-start): **Take Photos/Videos** on **`NOT_PLAYING`** (**Get Ready**) under **begin**, toggling **`capturesUserEnabled`** on **`currentLevel`**; tighter **`gap`** between checkbox and hidden-notification helper copy.
 
@@ -108,7 +111,10 @@ src/atoms/captureAtom.js
 - **`INITIAL_CAPTURE_SESSION`** defaults + jotai **`captureSessionAtom`**: counters, **`currentChanceBonus`**, **`photoActiveUntilMs`**, **`photoIconState`** / **`videoIconState`**, **`isRecording`**, **`showStandbyInactiveIcons`**, **`levelAllowsPhotos`** / **`levelAllowsVideos`**, **`introStyleCaptureHud`**, **`isCoolingDown`** + **`lastCaptureUiVisible`** (single-timeout cooldown; visible captures suppress standby during cooldown, hidden captures do not).
 
 src/components/Playing/CaptureStatusIcons.js
-- HUD omits when **`capturesEnabled`** is false; when enabled, **both** **`react-feather`** **`Camera`** and **`Video`** icons are always shown. Grey (**inactive**), black (**standby**), red (**active**) come solely from **`photoIconState`** / **`videoIconState`** (including **inactive** for task types that cannot produce that channel, e.g. Hit Depth → video, Up-and-Down → photo).
+- HUD omits unless **`capturesEnabled`** and the level is actively in play: **`navAtom`** **`===`** **`NAV.PLAYING`** and **`playStateAtom`** **`===`** **`PlayState.PLAYING`** or **`PAUSED`** (hides on Gameover, cancel, pre-begin, and other routes; **`capturesEnabled`** remains set after level end so **`Gameover`** stats rows still work).
+- When **`showStandbyInactiveIcons`** is enabled, **both** **`react-feather`** **`Camera`** and **`Video`** icons are always shown. Grey (**inactive**), black (**standby**), red (**active**) come solely from **`photoIconState`** / **`videoIconState`** (including **inactive** for task types that cannot produce that channel, e.g. Hit Depth → video, Up-and-Down → photo).
+- When **`showStandbyInactiveIcons`** is disabled, the HUD stays hidden until a visible capture is active: each channel renders only while its state is **active** (red photo icon for **`photoActiveUntilMs`** after a visible still capture; red video icon during visible recording). Standby and inactive glyphs are not shown; the widget returns **`null`** when neither channel is active.
+- Fixed **`bottom: 24`** / **`right: 24`** overlay; reads **`effectiveMirrorAtom`** and applies **`scaleX(-1)`** to the **Capture** label during play so label text mirrors with the rest of the UI (HUD is rendered outside **`App.js`** mirror wrapper to preserve viewport-fixed positioning).
 
 src/components/Playing/RestCapture.js
 - Thin Rest-task wrapper emitting **`onSignalCaptureWindow`** with **`useTaskCountdownLeft`** when Rest runs without **`RestBallsBonus`**.
