@@ -1,14 +1,16 @@
 # Revision 34 - Webcam Photo and Video Captures
 
 Adds optional functionality for the webcam to capture .jpg and .mp4 footage during gameplay. The level will attempt to time its captures based on the task type to show off your skills. Decide if you want a notification of a capture occuring; leave them enabled for extra embarrassment, or set them to hidden for anticipation of never knowing if you're being recorded. This is a potentially controversial feature, so several safeguards were put in place to ensure that captures cannot be taken without explicit user permission:
-    - This feature is only available in the electron-packaged version of the application; web-only builds will never take captures.
-    - Several flags must be enabled before captures may be taken; a profile-specific flag, a level-specific flag, and a final confirmation checkbox on the "Play" tab before starting a level.
-    - Default levels and the default profile are hard-coded to disable captures; a capture may only occur in a custom level with a custom profile that have explicitly enabled captures.
-    - Tasks have captures disabled by default; each task must manually enable captures of their available types to take captures even if all of the above requirements are met.
-    - Hidden notifications have their own profile-specific flag, level-specific flag, and configuration settings to ensure that notifications are always displayed unless the user explicitly allows them to be hidden.
+- This feature is only available in the electron-packaged version of the application; web-only builds will never take captures.
+- Several flags must be enabled before captures may be taken; a profile-specific flag, a level-specific flag, and a final confirmation checkbox on the "Play" tab before starting a level.
+- Default levels and the default profile are hard-coded to disable captures; a capture may only occur in a custom level with a custom profile that have explicitly enabled captures.
+- Tasks have captures disabled by default; each task must manually enable captures of their available types to take captures even if all of the above requirements are met.
+- Hidden notifications have their own profile-specific flag, level-specific flag, and configuration settings to ensure that notifications are always displayed unless the user explicitly allows them to be hidden.
+
 Two new CLI parameters have been added; 
-    - '--enable-captures' replaces the final confirmation checkbox to enable captures when launching the application through CLI
-    - '--capture-output' designates an output folder for saved captures separate from the level summary .json file. This parameter is optional; if omitted, the level's default capture location is used, which itself defaults to the same directory of the level summary .json.
+- '--enable-captures' replaces the final confirmation checkbox to enable captures when launching the application through CLI
+- '--capture-output' designates an output folder for saved captures separate from the level summary .json file. This parameter is optional; if omitted, the level's default capture location is used, which itself defaults to the same directory of the level summary .json.
+
 The .mp4 stream encoding required a new dependency in Mediabunny, which is automatically included in the relevant 'npm' scripts.
 
 
