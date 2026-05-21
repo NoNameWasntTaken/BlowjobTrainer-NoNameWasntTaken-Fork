@@ -48,6 +48,7 @@ import { getRandomInt } from './components/randomInt';
 import CalibrationTimer from './components/ExternalMode/CalibrationTimer';
 import PauseTimer from './components/ExternalMode/PauseTimer';
 import AutoStartWrapper from './components/ExternalMode/AutoStartWrapper';
+import CaptureStatusIcons from './components/Playing/CaptureStatusIcons';
 import AutoStartCameraChrome from './components/ExternalMode/AutoStartCameraChrome';
 import { initializeGrids } from './utils/gridMigration';
 import { resolveExternalAudioPackId } from './utils/externalVoicePackResolver';
@@ -568,6 +569,7 @@ function App() {
         </AutoStartWrapper>
 
         <AudioPlayer />
+        <CaptureStatusIcons />
 
         {DEBUG && <AudioTest />}
       </div>

@@ -2,6 +2,10 @@ import React from 'react'
 import { useAtomValue } from 'jotai'
 import { Camera, Video } from 'react-feather'
 import { captureSessionAtom } from '../../atoms/captureAtom'
+import { effectiveMirrorAtom } from '../../atoms/mirrorModeAtom'
+import * as NAV from '../../atoms/navAtom'
+import { navAtom } from '../../atoms/navAtom'
+import { playStateAtom, PlayState } from '../../atoms/taskAtom'
 
 /** Inactive: idle / no capture activity on this channel */
 const INACTIVE_COLOR = '#bbb'
@@ -20,14 +24,24 @@ function captureGlyphColor(state) {
 /** Photo / video capture status (inactive / standby / active). */
 export default function CaptureStatusIcons() {
     const session = useAtomValue(captureSessionAtom)
+    const effectiveMirror = useAtomValue(effectiveMirrorAtom)
+    const nav = useAtomValue(navAtom)
+    const playState = useAtomValue(playStateAtom)
 
-    // Hide entirely unless captures are allowed for this session (profile + level + user/CLI gate).
-    // Level "standby" styling must not imply recording when captures are off.
-    if (!session.capturesEnabled) return null
+    const levelActive =
+        nav === NAV.PLAYING &&
+        (playState === PlayState.PLAYING || playState === PlayState.PAUSED)
 
-    // Both icons are always visible when captures are enabled; icon state (active/standby/inactive)
-    // conveys per-channel availability. Task types that can never produce a given capture type
-    // (e.g. HITDEPTH→video, UPANDDOWN→photo) are forced to 'inactive' by useCaptureManager.
+    // Hide unless captures are allowed and a level is actively playing or paused.
+    // capturesEnabled stays true after level end for Gameover stats; HUD must not linger.
+    if (!session.capturesEnabled || !levelActive) return null
+
+    const showStandbyInactive = session.showStandbyInactiveIcons
+    const showPhotoIcon = showStandbyInactive || session.photoIconState === 'active'
+    const showVideoIcon = showStandbyInactive || session.videoIconState === 'active'
+
+    // When standby/inactive icons are disabled, hide the HUD until a visible capture is active.
+    if (!showPhotoIcon && !showVideoIcon) return null
 
     return (
         <div
@@ -47,29 +61,40 @@ export default function CaptureStatusIcons() {
                 boxShadow: '0 1px 6px rgba(0,0,0,0.12)',
             }}
         >
-            <span style={{ marginRight: 4 }}>Capture</span>
             <span
-                title="Photo"
-                style={{ display: 'inline-flex', alignItems: 'center', lineHeight: 0 }}
+                style={{
+                    marginRight: 4,
+                    ...(effectiveMirror ? { transform: 'scaleX(-1)', display: 'inline-block' } : {}),
+                }}
             >
-                <Camera
-                    size={ICON_SIZE}
-                    color={captureGlyphColor(session.photoIconState)}
-                    strokeWidth={2}
-                    aria-hidden
-                />
+                Capture
             </span>
-            <span
-                title="Video"
-                style={{ display: 'inline-flex', alignItems: 'center', lineHeight: 0 }}
-            >
-                <Video
-                    size={ICON_SIZE}
-                    color={captureGlyphColor(session.videoIconState)}
-                    strokeWidth={2}
-                    aria-hidden
-                />
-            </span>
+            {showPhotoIcon && (
+                <span
+                    title="Photo"
+                    style={{ display: 'inline-flex', alignItems: 'center', lineHeight: 0 }}
+                >
+                    <Camera
+                        size={ICON_SIZE}
+                        color={captureGlyphColor(session.photoIconState)}
+                        strokeWidth={2}
+                        aria-hidden
+                    />
+                </span>
+            )}
+            {showVideoIcon && (
+                <span
+                    title="Video"
+                    style={{ display: 'inline-flex', alignItems: 'center', lineHeight: 0 }}
+                >
+                    <Video
+                        size={ICON_SIZE}
+                        color={captureGlyphColor(session.videoIconState)}
+                        strokeWidth={2}
+                        aria-hidden
+                    />
+                </span>
+            )}
         </div>
     )
 }

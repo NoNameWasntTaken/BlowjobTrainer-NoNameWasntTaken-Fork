@@ -13,7 +13,6 @@ import CurrentShaft from './CurrentShaft';
 import EndlessDive from './EndlessDive';
 import RestBallsBonus from './RestBallsBonus';
 import RestCapture from './RestCapture';
-import CaptureStatusIcons from './CaptureStatusIcons';
 // helpers
 import { getRandomInt } from '../randomInt';
 import { TaskType, getTaskSummary, calculateClapTimeLimit, calculateSpeakTimeLimit } from '../Tasks/task';
@@ -722,7 +721,6 @@ function Playing() {
                     )}
                 </div>
             )}
-            <CaptureStatusIcons />
             {/* debug show me the current summaries, one line each. task_type and score */}
             {DEBUG && <pre>{currentLevel?.summaries?.map(s => `${s.type}: ${s.score}`).join('\n')}</pre>}
             {DEBUG && <pre>{JSON.stringify(currentLevel, null, 2)}</pre>}
