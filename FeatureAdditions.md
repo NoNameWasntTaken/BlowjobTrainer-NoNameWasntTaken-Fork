@@ -5,6 +5,7 @@ This document describes major new features compared to the original v18 of the p
 Note that many new features were created with the assumption that the application would be packaged into a standalone application via Electron Forge, rather than hosted on a web browser. To build the application in this way, I opened the project root in a terminal and ran the following commands:
 
 ```npm run build```
+
 ```npx electron-forge package --platform=darwin --arch=x64```
 
 The parameters `--platform` and `--arch` may need to be changed depending on your machine's OS.
@@ -66,7 +67,7 @@ The parameters `--platform` and `--arch` may need to be changed depending on you
 - **Prerequisites**: Levels may now require completion of a previous level(s), with a specific rank or better, in order to unlock and play. Default levels have had prerequisites assigned based on other default levels. Custom levels can have prerequisites customized to include default levels or other custom levels. Deleting a custom level will automatically remove it as a prerequsite for all relevant levels.
 - **Difficulty Score**: Levels have a difficulty score assigned to them, between 1 - 10. This score is automatically calculated for all levels, but can be manually overwritten for custom levels.
 - **Custom Voice Support**: Each task in a custom level can support custom voice lines, using the custom voice categories of a voice pack, by selecting the "Show Custom Voice Lines" checkbox. Level summary audio can be configured for each rank (fail, pass, good, and perfect) using standard or custom audio categories. 
-- **Quality of Life Features**: The custom level editor gained many smaller QoL improvements, including; task numbering, additional task addition bar at the bottom of the task list, copy/paste function to save and load a task type with its configuration data, and a fast transition toggle for each task to skip feedback and immediately transition to the next task.
+- **Quality of Life Features**: The custom level editor gained many smaller QoL improvements, including; task numbering, separate task addition bar at the bottom of the task list, copy/paste function to save and load a task type with its configuration data, and a fast transition toggle for each task to skip feedback and immediately transition to the next task.
 
 ---
 
