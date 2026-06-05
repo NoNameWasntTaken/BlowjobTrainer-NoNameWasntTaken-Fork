@@ -158,6 +158,7 @@ src/utils/captureWebcamRef.js
 # Revision 33 - Custom Level Editor Folder Filter, Copy/Paste Tasks, Buttplug Task Extensions
 
 The "Load Existing Level" block was updated to include an optional filter by custom subfolder. Folders are displayed when there is at least one level assigned to that folder. Selecting a folder will limit the level dropdown menu to only levels in that folder. The default value "All Folders" displays every level regardless of folder, matching the previous behavior.
+
 A new clipboard function was added to tasks in the custom level editor. Beneath the buttons that reorder tasks, a "Copy" button was added – press this button to copy the existing task and configuration data to the clipboard. Use the new task list option "+ Paste {Task}" to append that task type and configuration to the end of the level. Use the "(Clear Clipboard)" option to remove the current task from the clipboard, or copy a different task to overwrite the clipboard.
 
 Extended Buttplug.io integration to include the following task behaviors:
