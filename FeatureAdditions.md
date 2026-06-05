@@ -73,7 +73,7 @@ The parameters `--platform` and `--arch` may need to be changed depending on you
 
 ## 8: New Task Types
 
-- **Custom Level Exclusives** Configure several new task types for custom levels only. Default levels do not use these tasks.
+- **Custom Level Exclusives**: Configure several new task types for custom levels only. Default levels do not use these tasks.
 - **Hold and Clap**: A combination of the 'Hold Position' and 'Clap' tasks. Hold depth while slapping yourself. Going deeper will still count claps, but at a reduced rate, so aim for the target depth.
 - **Endless**: Completed/expanded implementation of the 'Endless' task, including independent scoring for holds, up/downs, slaps during holds, balls bonuses (if a balls grid is configured),and rhythm/depth consistency bonuses. Scoring earns rest time as indicated by the UI bar; staying off the shaft while rest time is expired incurs surface penalties. Trigger events at specific score thresholds, including playing a voice line, earning extra rest time, runing an external script, or adjusting buttplug.io device vibration. Unlike other tasks, progress is not reset when pausing and resuming this task, due to its long intended runtime.
 - **Speak**: Using a sherpa-onyx speech recognition model, this task listens for the user's speech and progresses when the correct phrase is heard. Configure target phrases with alternatives in brackets, or optional ommision of a word with a hyphen; for example, '[suck, tuck, luck, muck, -]' can replace the word 'suck' with any alternative listed or skip the word entirely. Optional fuzzy matching on statement end for increased flexibility in phrase matching. Configure between short, single-sentence phrases in short mode, or longer, multi-sentence sequences in long mode.
