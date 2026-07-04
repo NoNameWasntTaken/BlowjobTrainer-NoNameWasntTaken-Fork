@@ -92,6 +92,6 @@ The parameters `--platform` and `--arch` may need to be changed depending on you
 ## 10: Webcam Captures
 
 - **Capture Behavior:** Optional .jpg photos and .mp4 videos captures during gameplay, timed around tasks, with HUD status and tallies in the level summary.
-- **Consent Layers**: Multiple security/consent layers included to prevent unwanted captures, including restricted feature to Electron-packaged application only, and gates per profile, per level and per session via pre-play confirmation; all must pass before taking captures. Default profile and levels both force disable all captures; a custom profile and custom level are required.
+- **Consent Layers**: Multiple security/consent layers included to prevent unwanted captures, including restricted feature to Electron-packaged application only, as well as gates per profile, per level and per session via pre-play confirmation; all must pass before taking captures. Default profile and levels both force disable all captures; a custom profile and custom level are required.
 - **Configuration**: Adjust capture percentage chances, capture type preferences, and bias towards visible or hidden notifications on capture.
 
