@@ -1,6 +1,6 @@
 # Hidden Content — Explanation
 
-This companion log documents the Hidden Content feature not mentioned in 'CHANGELIST.txt.' Hidden content is an intentionally undocumented feature in the main document; it is described here instead, where it is the sole focus.
+This companion log documents the Hidden Content feature not mentioned in 'ChangeList.md.' Hidden content is an intentionally undocumented feature in the main document; it is described here instead, where it is the sole focus.
 
 On the "Help" tab, hovering over the version number and clicking 5 times in quick succession will toggle hidden content visibility. When hidden content is visible, all custom content - voice packs, background music, custom levels, and user profiles - can be designated as a hidden content item. All items set to hidden will be concealed if hidden content visibility is toggled to off - they will still exist in data, but they will not appear anywhere in menu selection.
 
