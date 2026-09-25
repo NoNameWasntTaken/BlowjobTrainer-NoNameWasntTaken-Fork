@@ -24,4 +24,4 @@ A personal fork of the blowjob trainer react application, originally created by 
 - **Why would you do this?**
   - Idk.
 - **Why 43 revisions?**
-  - I originally stopped at 34 revisions, because r34 go brrrr. Then I added the Elevenlabs voice generator for my own personal use in revision 35, and continued making smaller fixes and QOL enhancements up to revision 41. I had shelved the concept of custom themes, but after the release of v21, I was inspired to implement the UI overhaul and themes at the same time. That's how 43 revisions happened.
+  - I originally stopped at 34 revisions, because r34 go brrrr. Then I added the Elevenlabs voice generator for my own personal use in revision 35, and continued making smaller fixes and QOL enhancements up to revision 41. After the release of v21, I was inspired to implement the UI overhaul and add themes at the same time. That's how 43 revisions happened.
