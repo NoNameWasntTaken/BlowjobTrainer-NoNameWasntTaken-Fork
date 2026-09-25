@@ -15,7 +15,7 @@ You will need Node.js installed on your system to run these commands. The parame
 
 ## 1: External Integration Points
 
-- **Task Executables**: Optional external script path for all task types, ran automatically when the task begins. Utility options for browsing, testing, clearing scripts. Only available in the Electron-packaged application.
+- **Task Executables**: Optional external script path for all task types, which run automatically when the task begins. Utility options for browsing, testing, clearing scripts. Only available in the Electron-packaged application.
 - **CLI External Launch**: Launch the application via command-line interface, primarily as an integration point with other applications. Options include limited navigation when specifying a level via CLI parameter, calibration-only runs for extracting calibration data, and auto-start functionality to immediately begin a level on startup. Refer to "ExternalDocumentation.txt" for more info on this specific feature.
 
 ---
