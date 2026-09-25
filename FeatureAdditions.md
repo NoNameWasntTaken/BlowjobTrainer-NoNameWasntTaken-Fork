@@ -5,6 +5,7 @@ This document describes major new features compared to the original v18 of the p
 Note that many new features were created with the assumption that the application would be packaged into a standalone application via Electron Forge, rather than hosted on a web browser. To build the application in this way, I opened the project root in a terminal and ran the following commands:
 
 ```npm install``` (if not done already)
+
 ```npm run build```
 
 ```npx electron-forge package --platform=darwin --arch=x64```
