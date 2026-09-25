@@ -24,7 +24,7 @@ You will need Node.js installed on your system to run these commands. The parame
 
 - **Content Library**: New tab for managing custom content; initially only voice packs, but future custom content would also use this tab. Import, export, activate, and delete custom voice packs through this menu.
 - **Voice Pack Editor**: Separate implementation from the mainline fork, created prior to v19. Manage metadata, categories, and file assignments, with uploads tied to individual subcategories. "Play" buttons to test individual sound files. Categories grouped under section headings (baseline, session flow, feedback, etc).
-- **Custom Voice Cues**: Originally added in Revision 14 with a fixed number of categories, then replaced by the superior dynamic cue generation added in v21 of the mainline fork.
+- **Custom Voice Cues**: Originally added in Revision 14 with a fixed number of categories, then replaced by the superior dynamic cue generation system added in v21 of the mainline fork.
 - **Voice Resolution**: Default levels follow the pack selected in the library (with fallbacks to built-in audio). Custom levels can pin a specific pack in their own metadata or use the library selection, with sensible fallbacks.
 
 ---
