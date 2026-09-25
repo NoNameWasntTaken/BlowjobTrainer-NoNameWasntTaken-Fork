@@ -1,4 +1,4 @@
-# Blowjob-Trainer---NoNameWasntTaken-Fork
+# Blowjob Trainer: NoNameWasntTaken's Fork
 
 A personal fork of the blowjob trainer react application, originally created by Nullex on Itch.io. All credit goes to Nullex.
 
@@ -16,7 +16,7 @@ A personal fork of the blowjob trainer react application, originally created by 
 ## Anticipated Questions:
 
 - **What do I actually do with any of this?**
-  - Whatever you want. Take inspiration for future features, copy/paste source code into your version, ignore it completely - whatever floats your boat.
+  - Whatever you want. Take inspiration for future features, copy/paste source code into your own version, ignore it completely - whatever floats your boat.
 - **Was this vibe coded?**
   - Yep. I have some experience in React, so I could generally follow what the AI was doing. But I will admit that I am not skilled enough to build all of this from scratch in a reasonable time frame. Take that as you will.
 - **If I do take inspriation or source code into my own version, do I need to credit you?**
