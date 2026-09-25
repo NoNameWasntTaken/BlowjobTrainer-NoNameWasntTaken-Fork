@@ -1,0 +1,4 @@
+/* Space between major Audio tab blocks (each starts with an h5). */
+.mic-calibration > .mic-audio-section + .mic-audio-section {
+    margin-top: 4.5rem;
+}

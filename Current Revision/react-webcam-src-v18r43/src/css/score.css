@@ -1,0 +1,94 @@
+.score-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: 300px;
+    width: 100%;
+    margin: 16px auto;
+}
+
+.score-item {
+    background: var(--surface-soft);
+    color: var(--ink);
+    border-radius: 4px;
+    padding: 0.5rem 1rem;
+    display: flex;
+}
+
+.score-item.latest .score-points {
+    font-size: 1.3em;
+}
+
+.score-item.latest .score-bonus {
+    font-size: 1.1em;
+}
+
+.score-item.failed {
+    background: color-mix(in srgb, var(--danger) 18%, var(--surface));
+    color: var(--ink);
+}
+
+.score-main {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+}
+
+.score-points {
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+.score-bonus {
+    color: var(--success);
+    font-size: 0.9em;
+}
+
+.score-grade {
+    font-weight: 500;
+    font-size: 0.9em;
+    color: var(--muted);
+}
+
+.score-grade.perfect {
+    color: var(--ink);
+    letter-spacing: 0.1rem;
+    font-weight: 600;
+}
+
+.score-grade.good {
+    color: var(--text-secondary);
+    letter-spacing: 0.1rem;
+    font-weight: 500;
+}
+
+.score-grade.pass {
+    color: var(--text-secondary);
+}
+
+.score-grade.fail {
+    color: var(--danger);
+    font-weight: bold;
+}
+
+.score-item.penalty {
+    background: var(--danger);
+    color: #fff;
+}
+
+.score-grade.penalty {
+    color: #fff;
+    font-weight: bold;
+}
+
+.dive-issues {
+    font-size: 0.8em;
+    color: var(--muted);
+    margin-top: 2px;
+    font-style: italic;
+}
+
+.failed .dive-issues {
+    color: var(--text-secondary);
+}

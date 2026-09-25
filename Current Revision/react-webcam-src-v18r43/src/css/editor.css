@@ -1,0 +1,757 @@
+/* Delete Button - Circular with X */
+.button-delete {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid var(--danger);
+    background-color: var(--danger);
+    color: white;
+    font-size: 20px;
+    line-height: 1;
+    padding: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+.button-delete:hover {
+    background-color: var(--danger);
+    border-color: var(--danger);
+}
+
+.task-bookend {
+    border-block: 1px solid var(--line);
+    padding-block: 12px;
+    margin-block: 16px;
+}
+
+.task-bookend-collapsed {
+    border-block: none;
+    padding-block: 0;
+    margin-block: 4px;
+}
+
+/* One compact size for editor rows. Play and Save keep the shell's 4.2rem uppercase buttons. */
+button.control-compact,
+.control-compact button:not(.number-control-btn):not(.task-delete-button),
+.control-compact .button:not(.number-control-btn):not(.task-delete-button) {
+    min-height: 36px;
+    height: auto;
+    margin: 0;
+    padding: 0 10px;
+    border-radius: 8px;
+    box-shadow: none;
+    font-size: 1.1rem;
+    font-weight: 650;
+    letter-spacing: 0;
+    line-height: 1.2;
+    text-transform: none;
+}
+
+button.control-compact:hover,
+button.control-compact:focus-visible,
+.control-compact button:not(.number-control-btn):not(.task-delete-button):hover,
+.control-compact button:not(.number-control-btn):not(.task-delete-button):focus-visible,
+.control-compact .button:not(.number-control-btn):not(.task-delete-button):hover,
+.control-compact .button:not(.number-control-btn):not(.task-delete-button):focus-visible {
+    transform: none;
+    box-shadow: none;
+}
+
+.task-add-bar {
+    display: grid;
+    grid-template-columns: minmax(0, max-content) minmax(0, max-content);
+    justify-content: start;
+    align-items: start;
+    column-gap: 4rem;
+    row-gap: 12px;
+    margin-top: 1.2rem;
+    padding-left: 1.6rem;
+}
+
+.task-add-column {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+}
+
+.task-add-column:last-child {
+    padding-left: 12px;
+    border-left: 1px solid var(--line);
+}
+
+.task-add-group,
+.task-add-clipboard {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.task-add-group-label {
+    color: var(--muted);
+    font-size: 1.1rem;
+    font-weight: 650;
+    letter-spacing: 0;
+    line-height: 1.2;
+}
+
+.task-add-group-buttons,
+.task-add-clipboard-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.task-add-clipboard button:disabled {
+    opacity: 0.45;
+}
+
+@media (max-width: 600px) {
+    .task-add-bar {
+        grid-template-columns: 1fr;
+    }
+
+    .task-add-column:last-child {
+        padding-left: 0;
+        border-left: none;
+        padding-top: 12px;
+        border-top: 1px solid var(--line);
+    }
+}
+
+button.task-bookend-summary {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 4px 2.25rem;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--surface-soft);
+    color: inherit;
+    font: inherit;
+    font-size: 14px;
+    line-height: 1.3;
+    letter-spacing: 0;
+    text-align: left;
+    text-transform: none;
+    box-shadow: none;
+    cursor: pointer;
+}
+
+.task-bookend-summary-marker {
+    color: var(--muted);
+    font-size: 11px;
+}
+
+.task-bookend-summary-number {
+    font-weight: bold;
+    color: var(--muted);
+}
+
+button.task-bookend-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    margin: 0 0 10px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    font-weight: 600;
+    line-height: 1.3;
+    text-align: left;
+    cursor: pointer;
+}
+
+.task-middle-empty {
+    color: var(--muted);
+    font-size: 0.875rem;
+    font-weight: 400;
+    text-align: center;
+    padding: 16px;
+}
+
+/* Fixed dimensions prevent the global button minimum height stretching the icon.
+   letter-spacing/gap come from the shell button rule and shift × left; Raleway
+   also draws × below the em-box center (same as number-control minus). */
+button.task-delete-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 36px;
+    width: 36px;
+    height: 36px;
+    min-height: 36px;
+    margin: 0 0 0 12px;
+    padding: 0 0 0.12em 0.06em;
+    gap: 0;
+    border-radius: 10px;
+    border: 1px solid color-mix(in srgb, var(--danger) 35%, var(--surface));
+    color: var(--danger);
+    background: color-mix(in srgb, var(--danger) 12%, var(--surface));
+    font-size: 24px;
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: 0;
+    text-transform: none;
+    box-shadow: none;
+    transform: none;
+}
+
+button.task-delete-button:hover,
+button.task-delete-button:focus-visible {
+    color: var(--danger);
+    border-color: var(--danger);
+    background: color-mix(in srgb, var(--danger) 20%, var(--surface));
+    transform: none;
+    box-shadow: none;
+}
+
+button.task-delete-button:focus-visible {
+    outline: 2px solid var(--danger);
+    outline-offset: 2px;
+}
+
+.task-builder-section {
+    margin-top: 3.2rem;
+}
+
+.task-editor-row {
+    position: relative;
+    box-sizing: border-box;
+    max-width: calc(100% - 7.2rem);
+    margin-left: 7.2rem;
+}
+
+.task-editor-rail {
+    position: absolute;
+    left: -7.2rem;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    width: 6.4rem;
+}
+
+.task-editor-rail button {
+    margin: 0;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.task-editor-card {
+    padding: 12px 14px;
+    margin: 10px 0;
+    border: 1px solid color-mix(in srgb, var(--accent-border) 70%, var(--line));
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--accent-soft) 40%, var(--surface));
+    color: var(--ink);
+}
+
+.task-editor-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.task-editor-selectors {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px 20px;
+    min-width: 0;
+}
+
+.task-editor-type,
+.task-audio-selector {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.task-editor-card label,
+.task-audio-selector label {
+    margin: 0;
+    padding: 0;
+    white-space: nowrap;
+    font-size: 1.3rem;
+    line-height: 1.4;
+}
+
+.task-editor-type > span,
+.task-audio-selector > label {
+    flex-shrink: 0;
+}
+
+.task-editor-card select,
+.task-editor-card input[type="text"] {
+    width: auto;
+    min-width: 0;
+    max-width: 100%;
+    height: 36px;
+    min-height: 36px;
+    margin: 0;
+    padding: 0 10px;
+    font-size: 1.3rem;
+    border-radius: 8px;
+}
+
+.task-audio-selector select {
+    max-width: 260px;
+}
+
+.task-audio-selector > div:first-child {
+    margin-left: 2rem;
+}
+
+/* Type and category names must clear the custom dropdown arrow (right 1rem). */
+.task-editor-header .task-editor-type,
+.task-editor-voice .task-audio-selector.task-voice-category {
+    flex: 0 0 auto;
+    min-width: max-content;
+}
+
+.task-editor-voice {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px 20px;
+    width: 100%;
+    margin-top: 12px;
+}
+
+.task-editor-fields > .task-editor-voice {
+    flex-basis: 100%;
+}
+
+.task-editor-voice .task-audio-selector > div:first-child {
+    margin-left: 0;
+}
+
+/* Voice line names must stay clear of the dropdown arrow (right 1rem). */
+.task-editor-voice > .task-audio-selector:not(.task-voice-category) {
+    flex: 0 0 auto;
+    min-width: max-content;
+}
+
+.task-editor-card .task-editor-voice > .task-audio-selector:not(.task-voice-category) select {
+    box-sizing: content-box;
+    flex: 0 0 auto;
+    width: max-content;
+    min-width: max-content;
+    max-width: none;
+    padding-right: 3.5rem;
+}
+
+.task-editor-fields .task-tempo-field {
+    min-width: max-content;
+}
+
+.task-editor-card select.task-type-select,
+.task-editor-card select.task-voice-category-select {
+    box-sizing: content-box;
+    flex: 0 0 auto;
+    width: max-content;
+    min-width: max-content;
+    max-width: none;
+    padding-right: 2.5rem;
+}
+
+.task-editor-card select.task-tempo-select {
+    box-sizing: border-box;
+    flex: 0 0 auto;
+    width: max-content;
+    min-width: max-content;
+    max-width: none;
+    height: 32px;
+    min-height: 32px;
+    margin-top: 4px;
+    padding-right: 2.5rem;
+}
+
+.task-editor-card select.task-type-select {
+    border-color: var(--accent-border);
+}
+
+button.task-audio-preview {
+    flex-shrink: 0;
+    min-height: 36px;
+    margin: 0;
+    padding: 0 10px;
+    white-space: nowrap;
+    font-size: 1.1rem;
+    border-radius: 8px;
+}
+
+button.task-audio-preview.task-audio-preview-summary {
+    width: 12rem;
+    min-width: 12rem;
+    box-sizing: border-box;
+}
+
+button.summary-voice-mode-toggle {
+    width: 8.4rem;
+    min-width: 8.4rem;
+    box-sizing: border-box;
+}
+
+button.summary-voice-mode-toggle[aria-pressed="true"] {
+    border-color: var(--accent-border);
+    background: color-mix(in srgb, var(--accent-soft) 40%, var(--surface));
+    color: var(--accent-dark);
+}
+
+.summary-voice-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: stretch;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: min(100%, 70rem);
+    min-width: 0;
+    margin-inline: auto;
+}
+
+.summary-voice-row {
+    container-type: inline-size;
+    width: 100%;
+    min-width: 0;
+}
+
+.task-audio-selector.is-summary {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 27rem) auto;
+    column-gap: 8px;
+    row-gap: 8px;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-width: 0;
+}
+
+.task-audio-selector.is-summary > select {
+    min-width: 0;
+    width: 100%;
+    max-width: 27rem;
+}
+
+.summary-voice-label {
+    min-width: 7.2rem;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.summary-voice-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.summary-voice-type {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 0 0 auto;
+}
+
+.summary-voice-type-label {
+    white-space: nowrap;
+}
+
+@container (max-width: 32rem) {
+    .task-audio-selector.is-summary {
+        grid-template-columns: max-content minmax(0, 1fr);
+    }
+
+    .task-audio-selector.is-summary .summary-voice-actions {
+        grid-column: 2;
+    }
+}
+
+.task-editor-header .task-delete-button {
+    margin: 0;
+}
+
+.task-editor-fields {
+    display: flex;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 10px 18px;
+    margin-top: 12px;
+}
+
+.task-editor-fields > div {
+    min-width: 0;
+    max-width: 100%;
+    font-size: 1.3rem;
+    line-height: 1.4;
+}
+
+.task-editor-fields .margin-x {
+    margin: 0;
+}
+
+/* Compact steppers for metadata, task fields, capture settings, and Endless events.
+   Width follows the control, not the label or parent column. */
+.level-editor .number-control.margin-x {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+.level-editor .number-control-container {
+    --number-control-height: 32px;
+    --number-control-side: 32px;
+    box-sizing: border-box;
+    width: max-content;
+    max-width: 100%;
+    display: grid;
+    grid-template-columns: var(--number-control-side) 4.8rem var(--number-control-side);
+    height: var(--number-control-height);
+    margin-top: 4px;
+    border-radius: 8px;
+}
+
+.level-editor button.number-control-btn {
+    width: 32px;
+    min-height: 0;
+    height: 32px;
+    font-size: 1.5rem;
+}
+
+.level-editor input[type="number"].number-control-value {
+    min-width: 0;
+    width: 100%;
+    font-size: 1.3rem;
+}
+
+.task-editor-fields label {
+    display: block;
+    margin-bottom: 4px;
+}
+
+.task-editor-fields .task-rest-balls {
+    display: flex;
+    align-items: center;
+    padding-top: calc(1.3rem * 1.4 + 4px);
+}
+
+.task-editor-fields .task-rest-balls-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    min-height: 32px;
+    width: fit-content;
+    line-height: 1.2;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.task-editor-fields .task-rest-balls-label input[type="checkbox"] {
+    margin: 0;
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+}
+
+.task-editor-fields .task-speak-fuzzy-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 8px 0 0;
+    width: 100%;
+    line-height: 1.2;
+    white-space: normal;
+    cursor: pointer;
+}
+
+.task-editor-fields .task-speak-fuzzy-label input[type="checkbox"] {
+    margin: 0;
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+}
+
+.task-editor-fields .task-speak-fuzzy-label span {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.2;
+}
+
+.task-advanced {
+    margin-top: 8px;
+    border-top: 1px solid var(--line);
+    padding-top: 6px;
+}
+
+.task-advanced-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    width: 100%;
+    min-height: 36px;
+    height: 36px;
+    margin: 0;
+    padding: 0 2px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    box-shadow: none;
+    color: inherit;
+    font: inherit;
+    font-size: 1.2rem;
+    font-weight: 650;
+    letter-spacing: 0;
+    line-height: 1.2;
+    text-align: left;
+    text-transform: none;
+    cursor: pointer;
+}
+
+.task-advanced-toggle:hover,
+.task-advanced-toggle:focus-visible {
+    transform: none;
+    box-shadow: none;
+    color: inherit;
+    background: transparent;
+}
+
+.task-advanced-marker {
+    color: var(--muted);
+    font-size: 11px;
+}
+
+.task-advanced-summary {
+    color: var(--muted);
+    font-weight: 450;
+    font-size: 1.1rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+}
+
+.task-advanced-body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px 0 0;
+}
+
+.task-advanced button {
+    min-height: 36px;
+    height: 36px;
+    margin: 0;
+    padding: 0 10px;
+    border-radius: 8px;
+    box-shadow: none;
+    font-size: 1.1rem;
+    font-weight: 650;
+    letter-spacing: 0;
+    line-height: 1.2;
+    text-transform: none;
+}
+
+.task-advanced button:hover,
+.task-advanced button:focus-visible {
+    transform: none;
+    box-shadow: none;
+}
+
+.task-script-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.task-script-row input {
+    flex: 1;
+    min-width: 0;
+    width: auto;
+}
+
+.task-advanced-capture {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 16px;
+}
+
+.task-advanced-check,
+.task-advanced-capture label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: fit-content;
+}
+
+.task-advanced input[type="number"] {
+    width: 6.25rem;
+    height: 36px;
+    min-height: 36px;
+    margin: 0;
+    padding: 0 10px;
+    font-size: 1.3rem;
+    border-radius: 8px;
+}
+
+.task-audio-selector { flex-wrap: wrap; }
+.task-audio-notice { flex-basis: 100%; color: var(--danger); font-size: 1.1rem; }
+
+.task-help-notes {
+    margin-block: 16px;
+    padding: 10px 16px;
+    background: var(--surface-soft);
+    border-radius: 8px;
+    line-height: 1.6;
+}
+
+.task-help-notes summary {
+    cursor: pointer;
+    color: var(--muted);
+}
+
+.task-help-notes-content {
+    padding-top: 12px;
+}
+
+.task-help-notes p {
+    margin-block: 8px;
+}
+
+.task-help-notes ol,
+.task-help-notes ul {
+    margin-block: 8px;
+    padding-left: 24px;
+}
+
+@media (max-width: 600px) {
+    .task-audio-selector:not(.is-summary) {
+        flex-wrap: wrap;
+        width: 100%;
+    }
+
+    .task-audio-selector:not(.is-summary) select {
+        flex: 1;
+        width: 120px;
+    }
+}

@@ -1,0 +1,530 @@
+/*
+* Skeleton Light - Trimmed version of Skeleton V2.0.4
+* Copyright 2014, Dave Gamache
+* www.getskeleton.com
+* Free to use under the MIT license.
+* http://www.opensource.org/licenses/mit-license.php
+*/
+
+/* Grid
+–––––––––––––––––––––––––––––––––––––––––––––––––– */
+.container {
+    position: relative;
+    width: 100%;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.row {
+    width: 100%;
+    display: flex;
+}
+
+.row-centered {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+}
+
+.navigation-row {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    box-sizing: border-box;
+}
+
+.column-centered {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-sizing: border-box;
+}
+
+.round {
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.height38 {
+    height: 38px;
+}
+
+.width-md {
+    width: 100px;
+}
+
+.width-lg {
+    width: 150px;
+}
+
+
+
+/* Utility Classes */
+.margin-x {
+    margin-left: 1rem;
+    margin-right: 1rem;
+}
+
+.margin-x-sm {
+    margin-left: 0.5rem;
+    margin-right: 0.5rem;
+}
+
+.margin-xr-sm {
+    margin-right: 0.5rem;
+}
+
+.margin-xl-sm {
+    margin-left: 0.5rem;
+}
+
+.margin-y-lg {
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+}
+
+.margin-y {
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+}
+
+.margin-y-top {
+    margin-top: 2rem;
+}
+
+.margin-y-sm {
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.padding-x {
+    padding-left: 2rem;
+    padding-right: 2rem;
+}
+
+.padding-x-sm {
+    padding-left: 2.25rem;
+    padding-right: 2.25rem;
+}
+
+.padding-xr {
+    padding-right: 2rem;
+}
+
+.padding-xr-sm {
+    padding-right: 1rem;
+}
+
+.padding-xl {
+    padding-left: 2rem;
+}
+
+.padding-xl-sm {
+    padding-left: 1rem;
+}
+
+.padding-y {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+}
+
+.padding-y-sm {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+}
+
+.padding-y-md {
+    padding-top: 1.6rem;
+    padding-bottom: 1.6rem;
+}
+
+/* Base Styles
+–––––––––––––––––––––––––––––––––––––––––––––––––– */
+/* NOTE
+html is set to 62.5% so that all the REM measurements throughout Skeleton
+are based on 10px sizing. So basically 1.5rem = 15px :) */
+html {
+    font-size: 62.5%;
+}
+
+body {
+    font-size: 1.5em;
+    /* currently ems cause chrome bug misinterpreting rems on body element */
+    line-height: 1.6;
+    font-weight: 400;
+    font-family: "Raleway", "HelveticaNeue", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    color: #222;
+}
+
+/* Buttons
+–––––––––––––––––––––––––––––––––––––––––––––––––– */
+.button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 38px;
+    color: #555;
+    text-align: center;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .1rem;
+    text-transform: uppercase;
+    text-decoration: none;
+    white-space: nowrap;
+    background-color: transparent;
+    border-radius: 4px;
+    border: 1px solid #bbb;
+    cursor: pointer;
+}
+
+.button:hover,
+.button:focus {
+    color: #333;
+    border-color: #888;
+    outline: 0;
+}
+
+.button-primary {
+    color: #FFF;
+    background-color: var(--accent);
+    border-color: var(--accent);
+}
+
+.button-primary:hover,
+.button-primary:focus {
+    color: #FFF;
+    background-color: var(--accent);
+    border-color: var(--accent);
+}
+
+.button-warning {
+    color: #FFF;
+    background-color: var(--danger);
+    border-color: var(--danger)
+}
+
+.button-warning:hover,
+.button-warning:focus {
+    color: #FFF;
+    background-color: var(--danger);
+    border-color: var(--danger)
+}
+
+.button[disabled] {
+    text-decoration: line-through;
+    border-style: dashed;
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.button-primary[disabled] {
+    text-decoration: line-through;
+    border-style: dashed;
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.not-a-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 38px;
+    color: var(--muted);
+    text-align: center;
+    font-weight: 600;
+    /* letter-spacing: .1rem; */
+    /* text-transform: uppercase; */
+    /* text-decoration: none; */
+    white-space: nowrap;
+    background-color: var(--surface);
+    border-radius: 4px;
+    font-family: monospace;
+    /* border: 1px solid #bbb; */
+    /* cursor: pointer; */
+}
+
+.grid-two {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px
+}
+
+.grid-three {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px
+}
+
+.grid-four {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px
+}
+
+
+.grid-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px;
+    border: 1px solid #bbb;
+    border-radius: 4px;
+    transition: all 0.33s ease-in-out
+}
+
+.grid-item-selected {
+    border: 1px solid var(--accent)
+}
+
+.border-grey {
+    border: 1px solid #bbb;
+    border-radius: 4px;
+}
+
+.border-blue {
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+}
+
+/* Card Utilities
+–––––––––––––––––––––––––––––––––––––––––––––––––– */
+.card {
+    max-width: 480px;
+    padding: 1rem;
+    background: #f8f8f8;
+    border-radius: 4px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.card-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+}
+
+.card-row-center {
+    display: flex;
+    justify-content: center;
+    padding: 8px 0;
+}
+
+.row-space-between {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.border-bottom {
+    border-bottom: 1px solid var(--line)
+}
+
+/* For devices larger than 400px */
+@media (min-width: 400px) {
+    .container {
+        width: 85%;
+        padding: 0;
+    }
+}
+
+/* For devices larger than 400px */
+@media (max-width: 1000px) {
+    .grid-three {
+        grid-template-columns: repeat(2, 1fr)
+    }
+}
+
+/* For devices larger than 400px */
+@media (max-width: 700px) {
+    .grid-three {
+        grid-template-columns: repeat(1, 1fr)
+    }
+}
+
+/* For devices larger than 550px */
+@media (min-width: 550px) {
+    .container {
+        width: 80%;
+    }
+}
+
+/* Clearing
+–––––––––––––––––––––––––––––––––––––––––––––––––– */
+/* Self Clearing Goodness */
+.container:after,
+.row:after,
+.u-cf {
+    content: "";
+    display: table;
+    clear: both;
+}
+
+/* NumberControl Styles */
+.number-control-container {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid #bbb;
+    border-radius: 4px;
+    overflow: hidden;
+    height: 38px;
+    overflow: hidden;
+}
+
+.number-control-btn {
+    padding: 0;
+    margin: 0;
+    background: transparent;
+    color: var(--muted);
+    font-size: 1.5rem;
+    font-weight: 600;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    width: 38px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, color 0.2s;
+}
+
+.number-control-btn:active,
+.number-control-btn:focus {
+    background: var(--surface);
+    color: var(--ink);
+}
+
+/* .number-control-btn.minus {
+    border-right: 1px solid #bbb;
+    border-radius: 4px 0 0 4px;
+}
+
+.number-control-btn.plus {
+    border-left: 1px solid #bbb;
+    border-radius: 0 4px 4px 0;
+} */
+
+.number-control-value {
+    width: 3em;
+    text-align: center;
+    font-size: 1.5rem;
+    border-left: 1px dashed var(--line);
+    border-right: 1px dashed var(--line);
+    border-top: none;
+    border-bottom: none;
+    height: 100%;
+    padding: 0 2px;
+    background: var(--surface);
+    -moz-appearance: textfield;
+}
+
+.number-control-value::-webkit-outer-spin-button,
+.number-control-value::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* Audio tab: music fade durations — same NumberControl layout, ~12% smaller */
+.mic-duration-number-control-scale {
+    display: block;
+}
+
+.mic-duration-number-control-scale .number-control {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+.mic-duration-number-control-scale .number-control-container {
+    --number-control-height: 3.7rem;
+    --number-control-side: 3.7rem;
+}
+
+/* Checkbox sits on the duration stepper, under the "Duration (s)" caption */
+.mic-fade-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    justify-self: start;
+    white-space: nowrap;
+    box-sizing: border-box;
+    height: 3.7rem;
+    margin: 0;
+    padding: 0;
+}
+
+/* ColorReading utility class */
+.colorreading-box {
+    width: 64px;
+    height: 38px;
+    margin: 0 auto 6px auto;
+    border-radius: 4px;
+    border: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+
+/* ShaftReading utility class */
+.shaftreading-box {
+    width: 64px;
+    height: 38px;
+    margin: 0 auto 6px auto;
+    border-radius: 4px;
+    border: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 20px;
+}
+
+.flex-wrap {
+    flex-wrap: wrap;
+}
+
+/* Simple Input Styling */
+input,
+textarea,
+select {
+    width: 100%;
+    padding: 1rem;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+}
+
+input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    cursor: pointer;
+    accent-color: var(--accent);
+}
+
+select {
+    cursor: pointer;
+    background-color: var(--surface);
+    padding: 1rem;
+    padding-right: 2.5rem;
+    height: auto;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23555' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+}
+
+option {
+    padding: 0.6rem;
+}

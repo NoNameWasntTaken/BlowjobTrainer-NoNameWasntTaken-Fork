@@ -1,0 +1,88 @@
+/* Delete Button - Circular with X */
+.button-delete {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid #ff4444;
+    background-color: #ff4444;
+    color: white;
+    font-size: 20px;
+    line-height: 1;
+    padding: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+.button-delete:hover {
+    background-color: #ff3333;
+    border-color: #ff3333;
+}
+
+.task-bookend {
+    border-block: 1px solid #ddd;
+    padding-block: 12px;
+    margin-block: 16px;
+}
+
+.task-bookend-collapsed {
+    border-block: none;
+    padding-block: 0;
+    margin-block: 4px;
+}
+
+.task-bookend-summary {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 4px 2.25rem;
+    border: 1px solid #bbb;
+    border-radius: 4px;
+    background: #f9f9f9;
+    color: inherit;
+    font: inherit;
+    font-size: 14px;
+    line-height: 1.3;
+    text-align: left;
+    cursor: pointer;
+}
+
+.task-bookend-summary-marker {
+    color: #555;
+    font-size: 11px;
+}
+
+.task-bookend-summary-number {
+    font-weight: bold;
+    color: #555;
+}
+
+button.task-bookend-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    margin: 0 0 10px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    font-weight: 600;
+    line-height: 1.3;
+    text-align: left;
+    cursor: pointer;
+}
+
+.task-middle-empty {
+    color: #666;
+    font-size: 0.875rem;
+    font-weight: 400;
+    text-align: center;
+    padding: 16px;
+}

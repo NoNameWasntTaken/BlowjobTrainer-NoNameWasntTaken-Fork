@@ -1,0 +1,518 @@
+{
+    "status": "complete",
+    "startTime": null,
+    "totalTime": 0,
+    "currentScore": 1156,
+    "tasks": [],
+    "currentTask": null,
+    "completedTasks": [
+        {
+            "targetDepth": 2,
+            "time": 10,
+            "repeat": 3,
+            "audio": [
+                "audio/hold/hold 2a.mp3",
+                "audio/hold/hold 2b.mp3",
+                "audio/hold/hold 2c.mp3",
+                "audio/hold/hold 2d.mp3"
+            ],
+            "timeLimit": 55,
+            "audioHalfway": [
+                "audio/hold/halfway 2 a.mp3",
+                "audio/hold/halfway 2 b.mp3",
+                "audio/hold/halfway 2 c.mp3"
+            ],
+            "audioThreeQuarter": [
+                "audio/hold/threequarters 2 a.mp3",
+                "audio/hold/threequarters 2 b.mp3"
+            ],
+            "type": "hold",
+            "desc": "worship",
+            "id": 815927401
+        },
+        {
+            "targetDepth": 3,
+            "repeat": 6,
+            "audio": [
+                "audio/warmup/hit 3 a.mp3",
+                "audio/warmup/hit 3 b.mp3"
+            ],
+            "timeLimit": 60,
+            "type": "hitdepth",
+            "desc": "hit that depth",
+            "id": 215542270
+        },
+        {
+            "maxDepth": 3,
+            "minDepth": 1,
+            "tempo": 30,
+            "timeLimit": 45,
+            "audio": [
+                "audio/updown/1to3 slow a.mp3",
+                "audio/updown/1to3 slow b.mp3",
+                "audio/updown/1to3 slow c.mp3"
+            ],
+            "type": "updown",
+            "desc": "dive",
+            "id": 813218331
+        },
+        {
+            "targetDepth": 3,
+            "time": 6,
+            "repeat": 4,
+            "audio": [
+                "audio/warmup/hit 4 a.mp3"
+            ],
+            "timeLimit": 54,
+            "audioHalfway": [
+                "audio/hold/halfway 3 a.mp3",
+                "audio/hold/halfway 3 b.mp3",
+                "audio/hold/halfway 3 c.mp3"
+            ],
+            "audioThreeQuarter": [
+                "audio/hold/threequarters 3 a.mp3",
+                "audio/hold/threequarters 3 b.mp3",
+                "audio/hold/threequarters 3 c.mp3"
+            ],
+            "type": "hold",
+            "desc": "worship",
+            "id": 534862875
+        },
+        {
+            "minDepth": 2,
+            "maxDepth": 3,
+            "tempo": 60,
+            "timeLimit": 60,
+            "audio": [
+                "audio/updown/1to2 slow a.mp3",
+                "audio/updown/1to2 slow b.mp3"
+            ],
+            "type": "updown",
+            "desc": "dive",
+            "id": 380322005
+        },
+        {
+            "targetDepth": 4,
+            "repeat": 6,
+            "audio": [
+                "audio/hit/hit 4 a.mp3",
+                "audio/hit/hit 4 b.mp3",
+                "audio/hit/hit 4 c.mp3"
+            ],
+            "timeLimit": 90,
+            "type": "hitdepth",
+            "desc": "hit that depth",
+            "id": 450833753
+        },
+        {
+            "targetDepth": 3,
+            "time": 15,
+            "repeat": 3,
+            "audio": [
+                "audio/hold/hold 3a.mp3",
+                "audio/hold/hold 3b.mp3",
+                "audio/hold/hold 3c.mp3",
+                "audio/hold/hold 3d.mp3",
+                "audio/hold/hold 3e.mp3"
+            ],
+            "timeLimit": 70,
+            "audioHalfway": [
+                "audio/hold/halfway 3 a.mp3",
+                "audio/hold/halfway 3 b.mp3",
+                "audio/hold/halfway 3 c.mp3"
+            ],
+            "audioThreeQuarter": [
+                "audio/hold/threequarters 3 a.mp3",
+                "audio/hold/threequarters 3 b.mp3",
+                "audio/hold/threequarters 3 c.mp3"
+            ],
+            "type": "hold",
+            "desc": "worship",
+            "id": 812626493
+        },
+        {
+            "minDepth": 2,
+            "maxDepth": 3,
+            "tempo": 90,
+            "audio": [
+                "audio/updown/2to3 fast a.mp3",
+                "audio/updown/2to3 fast b.mp3"
+            ],
+            "timeLimit": 90,
+            "type": "updown",
+            "desc": "dive",
+            "id": 72161670
+        },
+        {
+            "targetDepth": 4,
+            "repeat": 8,
+            "audio": [
+                "audio/hit/hit 4 a.mp3",
+                "audio/hit/hit 4 b.mp3",
+                "audio/hit/hit 4 c.mp3"
+            ],
+            "timeLimit": 90,
+            "type": "hitdepth",
+            "desc": "hit that depth",
+            "id": 73824395
+        },
+        {
+            "targetDepth": 4,
+            "time": 4,
+            "repeat": 4,
+            "timeLimit": 46,
+            "audio": [
+                "audio/hold/hold 4a.mp3",
+                "audio/hold/hold 4b.mp3",
+                "audio/hold/hold 4c.mp3",
+                "audio/hold/hold 4d.mp3",
+                "audio/hold/hold 4e.mp3",
+                "audio/hold/hold 4f.mp3",
+                "audio/hold/hold 4g.mp3"
+            ],
+            "audioHalfway": [
+                "audio/hold/halfway 4 a.mp3",
+                "audio/hold/halfway 4 b.mp3",
+                "audio/hold/halfway 4 c.mp3",
+                "audio/hold/halfway 4 d.mp3",
+                "audio/hold/halfway 4 e.mp3"
+            ],
+            "audioThreeQuarter": [
+                "audio/hold/threequarters 4 a.mp3",
+                "audio/hold/threequarters 4 b.mp3",
+                "audio/hold/threequarters 4 c.mp3"
+            ],
+            "type": "hold",
+            "desc": "worship",
+            "id": 32001958
+        },
+        {
+            "repeat": 5,
+            "timeLimit": 20,
+            "audio": [
+                "audio/clap/clap a.mp3",
+                "audio/clap/clap b.mp3",
+                "audio/clap/clap c.mp3"
+            ],
+            "type": "clap",
+            "desc": "clap",
+            "id": 53588366
+        },
+        {
+            "minDepth": 2,
+            "maxDepth": 4,
+            "tempo": 30,
+            "audio": [
+                "audio/updown/2to4 med a.mp3",
+                "audio/updown/2to4 med b.mp3"
+            ],
+            "timeLimit": 60,
+            "type": "updown",
+            "desc": "dive",
+            "id": 174834021
+        },
+        {
+            "repeat": 10,
+            "timeLimit": 30,
+            "audio": [
+                "audio/clap/clap a.mp3",
+                "audio/clap/clap b.mp3",
+                "audio/clap/clap c.mp3"
+            ],
+            "type": "clap",
+            "desc": "clap",
+            "id": 794258717
+        },
+        {
+            "targetDepth": 3,
+            "time": 12,
+            "repeat": 4,
+            "timeLimit": 78,
+            "audio": [
+                "audio/hold/hold 3a.mp3",
+                "audio/hold/hold 3b.mp3",
+                "audio/hold/hold 3c.mp3",
+                "audio/hold/hold 3d.mp3",
+                "audio/hold/hold 3e.mp3"
+            ],
+            "audioHalfway": [
+                "audio/hold/halfway 3 a.mp3",
+                "audio/hold/halfway 3 b.mp3",
+                "audio/hold/halfway 3 c.mp3"
+            ],
+            "audioThreeQuarter": [
+                "audio/hold/threequarters 3 a.mp3",
+                "audio/hold/threequarters 3 b.mp3",
+                "audio/hold/threequarters 3 c.mp3"
+            ],
+            "type": "hold",
+            "desc": "worship",
+            "id": 744915600
+        },
+        {
+            "minDepth": 1,
+            "maxDepth": 3,
+            "tempo": 90,
+            "audio": "audio/release/pre release.mp3",
+            "timeLimit": 45,
+            "type": "updown",
+            "desc": "dive",
+            "id": 155573108
+        },
+        {
+            "minDepth": 1,
+            "maxDepth": 3,
+            "tempo": 60,
+            "audio": "audio/release/swallowit.mp3",
+            "timeLimit": 30,
+            "type": "updown",
+            "desc": "dive",
+            "id": 56967927
+        },
+        {
+            "targetDepth": 2,
+            "time": 15,
+            "repeat": 1,
+            "audio": [
+                "audio/hold/halfway 1 a.mp3",
+                "audio/hold/halfway 1 b.mp3",
+                "audio/hold/halfway 1 c.mp3",
+                "audio/hold/halfway 1 d.mp3"
+            ],
+            "timeLimit": 30,
+            "audioHalfway": [
+                "audio/hold/halfway 2 a.mp3",
+                "audio/hold/halfway 2 b.mp3",
+                "audio/hold/halfway 2 c.mp3"
+            ],
+            "audioThreeQuarter": [
+                "audio/hold/threequarters 2 a.mp3",
+                "audio/hold/threequarters 2 b.mp3"
+            ],
+            "type": "hold",
+            "desc": "worship",
+            "id": 375667503
+        }
+    ],
+    "milestones": {
+        "firstDepth3": true,
+        "firstDepth4": true
+    },
+    "taskScores": {},
+    "metrics": {},
+    "currentPenalties": 5,
+    "summaries": [
+        {
+            "type": "hold",
+            "counts": {
+                "perfect": 3,
+                "pass": 0,
+                "fail": 0,
+                "penalties": 0
+            },
+            "score": 45,
+            "targetDepth": 2,
+            "totalTimeHeld": 30,
+            "successfulHolds": 3
+        },
+        {
+            "type": "hitdepth",
+            "counts": {
+                "perfect": 0,
+                "pass": 6,
+                "fail": 1,
+                "penalties": 1
+            },
+            "score": 16,
+            "targetDepth": 3,
+            "hits": 6
+        },
+        {
+            "type": "updown",
+            "counts": {
+                "perfect": 14,
+                "pass": 0,
+                "fail": 2,
+                "penalties": 0
+            },
+            "perfectStreak": {
+                "depth": 3,
+                "streak": 9
+            },
+            "score": 56
+        },
+        {
+            "type": "hold",
+            "counts": {
+                "perfect": 4,
+                "pass": 0,
+                "fail": 1,
+                "penalties": 0
+            },
+            "score": 56,
+            "targetDepth": 3,
+            "totalTimeHeld": 24,
+            "successfulHolds": 4
+        },
+        {
+            "type": "updown",
+            "counts": {
+                "perfect": 24,
+                "pass": 7,
+                "fail": 0,
+                "penalties": 0
+            },
+            "perfectStreak": {
+                "depth": 3,
+                "streak": 9
+            },
+            "score": 79
+        },
+        {
+            "type": "hitdepth",
+            "counts": {
+                "perfect": 6,
+                "pass": 0,
+                "fail": 0,
+                "penalties": 0
+            },
+            "score": 48,
+            "targetDepth": 4,
+            "hits": 6
+        },
+        {
+            "type": "hold",
+            "counts": {
+                "perfect": 3,
+                "pass": 0,
+                "fail": 0,
+                "penalties": 0
+            },
+            "score": 105,
+            "targetDepth": 3,
+            "totalTimeHeld": 45,
+            "successfulHolds": 3
+        },
+        {
+            "type": "updown",
+            "counts": {
+                "perfect": 36,
+                "pass": 17,
+                "fail": 8,
+                "penalties": 1
+            },
+            "perfectStreak": {
+                "depth": 3,
+                "streak": 10
+            },
+            "score": 87
+        },
+        {
+            "type": "hitdepth",
+            "counts": {
+                "perfect": 8,
+                "pass": 0,
+                "fail": 0,
+                "penalties": 0
+            },
+            "score": 64,
+            "targetDepth": 4,
+            "hits": 8
+        },
+        {
+            "type": "hold",
+            "counts": {
+                "perfect": 4,
+                "pass": 0,
+                "fail": 0,
+                "penalties": 1
+            },
+            "score": 88,
+            "targetDepth": 4,
+            "totalTimeHeld": 16,
+            "successfulHolds": 4
+        },
+        {
+            "score": 100,
+            "counts": {
+                "claps": 5,
+                "penalties": 0
+            }
+        },
+        {
+            "type": "updown",
+            "counts": {
+                "perfect": 8,
+                "pass": 12,
+                "fail": 2,
+                "penalties": 1
+            },
+            "perfectStreak": {
+                "depth": 4,
+                "streak": 2
+            },
+            "score": 86
+        },
+        {
+            "score": 100,
+            "counts": {
+                "claps": 10,
+                "penalties": 0
+            }
+        },
+        {
+            "type": "hold",
+            "counts": {
+                "perfect": 4,
+                "pass": 0,
+                "fail": 1,
+                "penalties": 0
+            },
+            "score": 108,
+            "targetDepth": 3,
+            "totalTimeHeld": 48,
+            "successfulHolds": 4
+        },
+        {
+            "type": "updown",
+            "counts": {
+                "perfect": 28,
+                "pass": 5,
+                "fail": 0,
+                "penalties": 0
+            },
+            "perfectStreak": {
+                "depth": 3,
+                "streak": 15
+            },
+            "score": 61
+        },
+        {
+            "type": "updown",
+            "counts": {
+                "perfect": 14,
+                "pass": 0,
+                "fail": 2,
+                "penalties": 0
+            },
+            "perfectStreak": {
+                "depth": 3,
+                "streak": 14
+            },
+            "score": 42
+        },
+        {
+            "type": "hold",
+            "counts": {
+                "perfect": 1,
+                "pass": 0,
+                "fail": 1,
+                "penalties": 1
+            },
+            "score": 15,
+            "targetDepth": 2,
+            "totalTimeHeld": 15,
+            "successfulHolds": 1
+        }
+    ]
+}

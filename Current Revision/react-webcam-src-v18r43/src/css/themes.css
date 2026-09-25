@@ -1,0 +1,248 @@
+/*
+ * Theme tokens. Same names as v22. `data-theme` on the document element selects
+ * a preset. Custom keeps this default set and overlays accent, page, ink, and
+ * danger, plus accent steps and ink-tinted chrome derived from those colors.
+ */
+
+:root {
+    color-scheme: light;
+    --ink: #0f172a;
+    --muted: #64748b;
+    --line: #e2e8f0;
+    --surface: #ffffff;
+    --surface-soft: #f1f5f9;
+    --page: #f8fafc;
+    --text-secondary: #475569;
+    --accent: #2563eb;
+    --accent-rgb: 37, 99, 235;
+    --accent-light: #3b82f6;
+    --accent-border: #bfdbfe;
+    --accent-dark: #1d4ed8;
+    --accent-soft: #eff6ff;
+    --success: #16a36a;
+    --danger: #dc2626;
+    --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px rgba(15, 23, 42, 0.06);
+    --shadow-lg: 0 18px 50px rgba(15, 23, 42, 0.1);
+}
+
+/* v22 palette: near-white page, rose-red accent. */
+:root[data-theme="modern-red"] {
+    color-scheme: light;
+    --ink: #352329;
+    --muted: #79656b;
+    --line: #efdee2;
+    --surface: #ffffff;
+    --surface-soft: #fcf5f6;
+    --page: #fffafb;
+    --text-secondary: #654b54;
+    --accent: #b83e59;
+    --accent-rgb: 184, 62, 89;
+    --accent-light: #c14863;
+    --accent-border: #e8b6c2;
+    --accent-dark: #963047;
+    --accent-soft: #fbe9ed;
+    --success: #16a36a;
+    --danger: #d92d4b;
+    --shadow-sm: 0 1px 2px rgba(53, 35, 41, 0.04), 0 8px 24px rgba(53, 35, 41, 0.06);
+    --shadow-lg: 0 18px 50px rgba(73, 36, 47, 0.1);
+}
+
+:root[data-theme="dark"] {
+    color-scheme: dark;
+    --ink: #f5f5f5;
+    --muted: #a3a3a3;
+    --line: #2e2e2e;
+    --surface: #171717;
+    --surface-soft: #1f1f1f;
+    --page: #0a0a0a;
+    --text-secondary: #d4d4d4;
+    --accent: #dc2626;
+    --accent-rgb: 220, 38, 38;
+    --accent-light: #ef4444;
+    --accent-border: #7f1d1d;
+    --accent-dark: #b91c1c;
+    --accent-soft: #2a1212;
+    --success: #16a36a;
+    --danger: #ef4444;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35), 0 8px 24px rgba(0, 0, 0, 0.45);
+    --shadow-lg: 0 18px 50px rgba(0, 0, 0, 0.55);
+}
+
+/* Current v18r41 brand: Skeleton cyan, white page, warning red. */
+:root[data-theme="classic"] {
+    color-scheme: light;
+    --ink: #222222;
+    --muted: #555555;
+    --line: #e1e1e1;
+    --surface: #ffffff;
+    --surface-soft: #f8f8f8;
+    --page: #ffffff;
+    --text-secondary: #555555;
+    --accent: #33c3f0;
+    --accent-rgb: 51, 195, 240;
+    --accent-light: #67d4f5;
+    --accent-border: #b6ecf9;
+    --accent-dark: #1eaedb;
+    --accent-soft: #e8f8fd;
+    --success: #16a36a;
+    --danger: #ff4d4d;
+    --shadow-sm: 0 1px 2px rgba(34, 34, 34, 0.04), 0 8px 24px rgba(34, 34, 34, 0.06);
+    --shadow-lg: 0 18px 50px rgba(34, 34, 34, 0.1);
+}
+
+html,
+body,
+#root {
+    min-height: 100%;
+}
+
+html body {
+    min-height: 100vh;
+    background-color: var(--page);
+    background-image: radial-gradient(circle at 10% 0%, rgba(var(--accent-rgb), 0.07), transparent 27rem);
+    background-repeat: no-repeat;
+    color: var(--ink);
+}
+
+.card {
+    color: var(--ink);
+}
+
+.card.theme-control {
+    color: var(--ink);
+    background: var(--surface);
+    border: 1px solid var(--line);
+}
+
+.card.theme-control .border-bottom {
+    border-bottom-color: var(--line);
+}
+
+.card.theme-control .theme-note {
+    margin: 0.6rem 0 0;
+    color: var(--muted);
+    font-size: 1.3rem;
+    line-height: 1.35;
+}
+
+.theme-presets,
+.theme-swatches {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+}
+
+.theme-create-heading {
+    margin: 1.6rem 0 0.4rem;
+    text-align: center;
+}
+
+.theme-swatches {
+    margin-top: 0.8rem;
+}
+
+.theme-swatch {
+    width: 2.6rem;
+    height: 2.6rem;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.card.theme-control .button {
+    color: var(--ink);
+    border-color: var(--line);
+}
+
+.card.theme-control .button:hover,
+.card.theme-control .button:focus,
+.card.theme-control .button.theme-preset-selected,
+.card.theme-control .button.theme-preset-selected:hover,
+.card.theme-control .button.theme-preset-selected:focus {
+    color: var(--ink);
+    border-color: var(--accent);
+    outline: 0;
+}
+
+.card.theme-control .button.theme-preset-selected {
+    box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.theme-color-grid {
+    display: grid;
+    width: max-content;
+    margin: 1rem auto 0;
+    grid-template-columns: auto auto auto;
+    column-gap: 2.4rem;
+    row-gap: 0.6rem;
+    align-items: center;
+    justify-items: center;
+}
+
+.card.theme-control .theme-color-grid label {
+    margin: 0;
+    padding: 0;
+    color: var(--ink);
+    text-align: right;
+}
+
+.theme-color-input {
+    width: 3rem;
+    height: 2rem;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: var(--surface);
+    cursor: pointer;
+}
+
+.theme-color-hex {
+    color: var(--muted);
+    font-size: 1.2rem;
+    font-family: ui-monospace, monospace;
+}
+
+.theme-picker {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1.2rem;
+    margin: 1rem 0;
+}
+
+.theme-picker > label {
+    margin: 0;
+    padding: 0;
+    color: var(--ink);
+    font-size: 1.8rem;
+    font-weight: 700;
+}
+
+.card.theme-control .theme-picker select {
+    min-width: 20rem;
+    color: var(--ink);
+    background: var(--surface);
+    border: 1px solid var(--line);
+}
+
+.theme-save-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.8rem;
+    margin-top: 1rem;
+}
+
+.card.theme-control .theme-save-row input {
+    min-height: 3.2rem;
+    padding: 0.4rem 0.8rem;
+    color: var(--ink);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+}

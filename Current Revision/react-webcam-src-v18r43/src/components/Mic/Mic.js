@@ -1,0 +1,287 @@
+import React, { useEffect, useState, useCallback, useRef } from 'react'
+import ClapDetector from '../Playing/ClapDetector'
+import VolumeControl from '../VolumeControl'
+import NumberControl from '../NumberControl'
+import {
+    sfxVolumeAtom,
+    voiceVolumeAtom,
+    musicVolumeAtom,
+    musicFadeInEnabledAtom,
+    musicFadeInDurationAtom,
+    musicFadeOutEnabledAtom,
+    musicFadeOutDurationAtom,
+    musicPlaybackSessionAtom,
+    feedbackAtom,
+    sfxAtom,
+} from '../../atoms/audioAtom'
+import { useAtom, useAtomValue, useSetAtom } from 'jotai'
+import { currentLevelAtom, playStateAtom, PlayState } from '../../atoms/taskAtom'
+import { store } from '../../store'
+import { musicTrackManager } from '../../services/musicTrackManager'
+import { audioProcessingService } from '../../services/audioProcessingService'
+import MicInputDevicePicker from './MicInputDevicePicker'
+import SpeechDetectionCalibration from './SpeechDetectionCalibration'
+import { micAudioTestModeAtom } from '../../atoms/markersAtoms'
+import './Mic.css'
+
+const VOICE_TEST_ORDER = ['ZERO', 'ONE', 'TWO', 'THREE', 'FOUR', 'BALL']
+const SFX_TEST_ORDER = ['TICK', 'TOCK', 'QUIET']
+
+/** Aligns with AudioPlayer fade-out timeout slack (`fadeOutSec * 1000 + 50`). */
+const TEST_MUSIC_FADE_END_SLACK_MS = 100
+
+/** e.g. ZERO → Zero, QUIET → Quiet */
+function formatTestKeyLabel(key) {
+    if (!key) return ''
+    return key.charAt(0) + key.slice(1).toLowerCase()
+}
+
+function Mic() {
+    const [testMusicOn, setTestMusicOn] = useState(false)
+    /**
+     * True while mic test music may still need a hard stop on leaving the Audio tab.
+     * Stays true through fade-out after Stop until {@link testMusicStopFadeEndTimeoutRef} fires.
+     */
+    const testMusicOnRef = useRef(false)
+    const testMusicStopFadeEndTimeoutRef = useRef(null)
+    const [voiceTestIndex, setVoiceTestIndex] = useState(0)
+    const [sfxTestIndex, setSfxTestIndex] = useState(0)
+    const setFeedback = useSetAtom(feedbackAtom)
+    const setSfx = useSetAtom(sfxAtom)
+    const setMusicSession = useSetAtom(musicPlaybackSessionAtom)
+    const musicFadeOutEnabled = useAtomValue(musicFadeOutEnabledAtom)
+    const [fadeInEnabled, setFadeInEnabled] = useAtom(musicFadeInEnabledAtom)
+    const [fadeInDuration, setFadeInDuration] = useAtom(musicFadeInDurationAtom)
+    const [fadeOutEnabled, setFadeOutEnabled] = useAtom(musicFadeOutEnabledAtom)
+    const [fadeOutDuration, setFadeOutDuration] = useAtom(musicFadeOutDurationAtom)
+    const [micAudioTestMode, setMicAudioTestMode] = useAtom(micAudioTestModeAtom)
+    const currentLevel = useAtomValue(currentLevelAtom)
+    const playState = useAtomValue(playStateAtom)
+    const levelInProgress =
+        currentLevel != null &&
+        (playState === PlayState.PLAYING || playState === PlayState.PAUSED)
+
+    useEffect(() => {
+        if (!levelInProgress) return
+        setMicAudioTestMode((prev) => (prev === 'clap' || prev === 'speech' ? 'off' : prev))
+    }, [levelInProgress, setMicAudioTestMode])
+
+    useEffect(() => {
+        return () => {
+            if (testMusicStopFadeEndTimeoutRef.current != null) {
+                clearTimeout(testMusicStopFadeEndTimeoutRef.current)
+                testMusicStopFadeEndTimeoutRef.current = null
+            }
+            if (!testMusicOnRef.current) return
+            store.set(musicPlaybackSessionAtom, (prev) => ({
+                url: null,
+                generation: prev.generation + 1,
+                stopFade: false
+            }))
+        }
+    }, [])
+
+    const startTestMusic = async () => {
+        const id = musicTrackManager.getActiveTrackId()
+        if (!id) {
+            window.alert('Select a background music track in Content Library first (Set Active).')
+            return
+        }
+        try {
+            const ctx = await audioProcessingService.ensureAudioContext()
+            await ctx.resume()
+            const url = await musicTrackManager.resolveTrackUrl(id)
+            if (!url) {
+                window.alert('Could not load the selected track.')
+                return
+            }
+            if (testMusicStopFadeEndTimeoutRef.current != null) {
+                clearTimeout(testMusicStopFadeEndTimeoutRef.current)
+                testMusicStopFadeEndTimeoutRef.current = null
+            }
+            setMusicSession((prev) => ({
+                url,
+                generation: prev.generation + 1,
+                stopFade: false
+            }))
+            testMusicOnRef.current = true
+            setTestMusicOn(true)
+        } catch (e) {
+            console.error(e)
+            window.alert(e.message || 'Could not start test music')
+        }
+    }
+
+    const stopTestMusic = () => {
+        if (testMusicStopFadeEndTimeoutRef.current != null) {
+            clearTimeout(testMusicStopFadeEndTimeoutRef.current)
+            testMusicStopFadeEndTimeoutRef.current = null
+        }
+        const stopFade = musicFadeOutEnabled
+        const fadeSec = Number(fadeOutDuration) || 0
+        const usesFadeStop = stopFade && fadeSec > 0
+        if (usesFadeStop) {
+            testMusicStopFadeEndTimeoutRef.current = setTimeout(() => {
+                testMusicStopFadeEndTimeoutRef.current = null
+                testMusicOnRef.current = false
+            }, Math.ceil(fadeSec * 1000) + TEST_MUSIC_FADE_END_SLACK_MS)
+        } else {
+            testMusicOnRef.current = false
+        }
+        setMusicSession((prev) => ({
+            url: null,
+            generation: prev.generation + 1,
+            stopFade
+        }))
+        setTestMusicOn(false)
+    }
+
+    const playTestVoice = useCallback(() => {
+        const key = VOICE_TEST_ORDER[voiceTestIndex]
+        setFeedback(`Calibration.${key}`)
+        setVoiceTestIndex((i) => (i + 1) % VOICE_TEST_ORDER.length)
+    }, [setFeedback, voiceTestIndex])
+
+    const playTestSfx = useCallback(() => {
+        const key = SFX_TEST_ORDER[sfxTestIndex]
+        setSfx(`Sfx.${key}`)
+        setSfxTestIndex((i) => (i + 1) % SFX_TEST_ORDER.length)
+    }, [setSfx, sfxTestIndex])
+
+    return (
+        <div className="mic-calibration">
+            <h2 className="tab-title">Audio Calibration</h2>
+            <MicInputDevicePicker />
+            <div className="mic-audio-section">
+                <ClapDetector
+                    isCalibration={true}
+                    targetClaps={1}
+                    timeLimit={30}
+                    onTaskComplete={() => { }}
+                    disableClapTestToggle={levelInProgress}
+                />
+            </div>
+            <div className="speech-detection-test-section mic-audio-section">
+                <div className="row-centered margin-y-top">
+                    <h5>Speech Detection</h5>
+                </div>
+                <div className="row-centered margin-y-sm">
+                    <button
+                        type="button"
+                        className={`button padding-x${micAudioTestMode === 'speech' ? ' button-primary' : ''}`}
+                        disabled={levelInProgress}
+                        title={
+                            levelInProgress
+                                ? 'Finish or cancel the in-progress level before using Speech Test.'
+                                : undefined
+                        }
+                        onClick={() =>
+                            setMicAudioTestMode(micAudioTestMode === 'speech' ? 'off' : 'speech')
+                        }
+                        aria-pressed={micAudioTestMode === 'speech'}
+                    >
+                        {micAudioTestMode === 'speech' ? 'Speech Test On' : 'Speech Test Off'}
+                    </button>
+                </div>
+                {micAudioTestMode === 'speech' ? <SpeechDetectionCalibration /> : null}
+            </div>
+            <div className="column-centered mic-audio-section">
+                <h5 className="margin-y-sm">Background Track Settings</h5>
+                <div className="mic-fade-settings margin-y-sm">
+                    <label className="mic-fade-checkbox-label">
+                        <input
+                            type="checkbox"
+                            checked={fadeInEnabled}
+                            onChange={(e) => setFadeInEnabled(e.target.checked)}
+                        />
+                        Fade In
+                    </label>
+                    <div className="mic-duration-number-control-scale">
+                        <NumberControl
+                            label="Duration (s)"
+                            value={fadeInDuration}
+                            setValue={setFadeInDuration}
+                            min={1}
+                            max={30}
+                            step={1}
+                        />
+                    </div>
+                    <label className="mic-fade-checkbox-label">
+                        <input
+                            type="checkbox"
+                            checked={fadeOutEnabled}
+                            onChange={(e) => setFadeOutEnabled(e.target.checked)}
+                        />
+                        Fade Out
+                    </label>
+                    <div className="mic-duration-number-control-scale">
+                        <NumberControl
+                            label="Duration (s)"
+                            value={fadeOutDuration}
+                            setValue={setFadeOutDuration}
+                            min={1}
+                            max={30}
+                            step={1}
+                        />
+                    </div>
+                </div>
+                <div className="row-centered margin-y-sm">
+                    {!testMusicOn ? (
+                        <button type="button" className="button button-primary padding-x" onClick={() => void startTestMusic()}>
+                            Test Background Track
+                        </button>
+                    ) : (
+                        <button type="button" className="button padding-x" onClick={stopTestMusic}>
+                            Stop Test Music
+                        </button>
+                    )}
+                </div>
+                <div
+                    className="row-centered margin-y-sm"
+                    style={{
+                        display: 'flex',
+                        gap: '12px',
+                        flexWrap: 'wrap',
+                        justifyContent: 'center',
+                    }}
+                >
+                    <button type="button" className="button padding-x" onClick={playTestVoice}>
+                        Test Voice: {formatTestKeyLabel(VOICE_TEST_ORDER[voiceTestIndex])}
+                    </button>
+                    <button type="button" className="button padding-x" onClick={playTestSfx}>
+                        Test SFX: {formatTestKeyLabel(SFX_TEST_ORDER[sfxTestIndex])}
+                    </button>
+                </div>
+            </div>
+            <div className="column-centered mic-audio-section">
+                <h5 className="margin-y-sm">Volume Settings</h5>
+                <VolumeControl label="SFX" volumeAtom={sfxVolumeAtom} />
+                <VolumeControl label="Voice" volumeAtom={voiceVolumeAtom} />
+                <VolumeControl label="Music" volumeAtom={musicVolumeAtom} />
+            </div>
+            <hr />
+            <h3>Help</h3>
+            <p className="margin-y-sm">
+                Use this page to calibrate your microphone for clap and speech detection and to adjust audio levels.
+            </p>
+            <p className="margin-y-sm">
+                Select from available microphone devices above, then turn on <b>Clap Test</b> or <b>Speech Test</b> to ensure the microphone is working correctly. Only one test runs at a time; starting one test automatically ends the other.
+            </p>
+            <p className="margin-y-sm">
+                <b>Adjust the threshold</b> under Clap Detection, then slap yourself (or just clap your hands). Detection uses <b>spike above noise floor</b> (residual) and <b>sharp rise</b>; keep an eye on the <b>counter</b> and meters.
+            </p>
+            <p className="margin-y-sm">
+                Test speech recognition and note the resulting text output; Speak tasks should be configured to match the text, using optional replacements in brackets as necessary.
+            </p>
+            <p className="margin-y-sm">
+                Run <b>Test Background Track</b> to verify levels with SFX and Voice, as well as clap/speech detection with background music. Ensure a background track is selected in the Content Library to use this feature.
+            </p>
+            <p className="margin-y-sm">
+                When running a level with Speak tasks, a separate microphone from the default system mic is recommended. This is especially important when background music is playing as well. External webcams with their own microphones work best.
+            </p>
+            <hr />
+        </div>
+    )
+}
+
+export default Mic

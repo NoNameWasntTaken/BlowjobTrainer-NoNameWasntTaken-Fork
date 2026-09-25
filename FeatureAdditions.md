@@ -4,10 +4,11 @@ This document describes major new features compared to the original v18 of the p
   
 Note that many new features were created with the assumption that the application would be packaged into a standalone application via Electron Forge, rather than hosted on a web browser. To build the application in this way, I opened the project root in a terminal and ran the following commands:
 
+```npm install``` (if not done already)
 ```npm run build```
 ```npx electron-forge package --platform=darwin --arch=x64```
 
-The parameters `--platform` and `--arch` may need to be changed depending on your machine's OS.
+You will need Node.js installed on your system to run these commands. The parameters `--platform` and `--arch` will need to be changed depending on your machine's OS.
 
 
 ## 1: External Integration Points
@@ -20,22 +21,22 @@ The parameters `--platform` and `--arch` may need to be changed depending on you
 ## 2: Voice Pack Management
 
 - **Content Library**: New tab for managing custom content; initially only voice packs, but future custom content would also use this tab. Import, export, activate, and delete custom voice packs through this menu.
-- **Voice Pack Editor**: New tab for creating and editing packs — metadata, categories, and file assignments — with uploads tied to individual subcategories. "Play" buttons to test individual sound files. Categories grouped under section headings (baseline, session flow, feedback, etc).
-- **Custom Voice Slots**: Up to 40 configurable custom voice slots (Custom1 – Custom40), each with an optional display name for clearer organization. Custom voice lines can be used for specific scenarios in the custom level editor, at the user's discression. Custom voice categories with no files assigned are always hidden to reduce clutter.
+- **Voice Pack Editor**: Separate implementation from the mainline fork, created prior to v19. Manage metadata, categories, and file assignments, with uploads tied to individual subcategories. "Play" buttons to test individual sound files. Categories grouped under section headings (baseline, session flow, feedback, etc).
+- **Custom Voice Cues**: Originally added in Revision 14 with a fixed number of categories, then replaced by the superior dynamic cue generation added in v21 of the mainline fork.
 - **Voice Resolution**: Default levels follow the pack selected in the library (with fallbacks to built-in audio). Custom levels can pin a specific pack in their own metadata or use the library selection, with sensible fallbacks.
 
 ---
 
 ## 3: Multi-Grid Support
 
-- **Multiple Grids**: The calibration screen now supports multiple grids, each with its own painted squares, base color, and sensitivity values. In gameplay, the total coverage percentage is calculated as a combined total of all configured grids.
+- **Multiple Grids**: The grid calibration screen now supports multiple grids, each with its own painted squares, base color, and sensitivity values. In gameplay, the total coverage percentage is calculated as a combined total of all configured grids.
 - **Balls Bonus**: As an extension of the multi-grid feature, any grid can be toggled into a 'balls' region, independent from the main shaft. Custom levels can then be configured to support bonus points during rest by covering a minimum percentage of the grids designated as 'balls'; this fulfills the role play of voice lines that tell the user to kiss the balls or rest them on their face.
 
 ---
 
 ## 4: Webcam And Display Improvements
 
-- **Camera Toggle**: Turn the webcam off outside of gameplay, for when you dont want to be watched until you're ready.
+- **Camera Toggle**: Turn the webcam off outside of gameplay, if you dont want to be watched until you're ready.
 - **Rotation**: Cycle the webcam display in 90-degree steps to better fit custom webcam setups. Grid drawing and pointer mapping follow rotation.
 - **Webcam Display Size**: A new slider was added to adjust the size of the webcam display. Increase the display size when drawing grids, or decrease it when switching to gameplay.
 - **Mirror Mode**: Flip the play UI horizontally during gameplay. If your setup has you look into a mirror to read the UI, use this option to ensure text remains readable.
@@ -52,10 +53,10 @@ The parameters `--platform` and `--arch` may need to be changed depending on you
 
 ---
 
-## 6: Calibration Improvements
+## 6: Settings Import/Export
 
-- **Export/Import**: Export current configuration data to save it for later, then import it again to load it. This avoids manual reconfiguration of grids every time the application is started.
-- **Saved Data**: Calibration export/import includes all grids (including painted squares, base color, sensitivity values, and balls region toggle state), SFX, voice, and music volumes, preferred camera and mic device ID (missing IDs are skipped gracefully), camera rotation, and webcam display size value.
+- **Setup Menu**: A utility option available on all tabs. Export select application setup data, or import all data in a settings .json file.
+- **Saved Data**: Settings export/import covers seven distinct areas. "Camera" covers the selected camera, rotation, and preview size. "Grids" covers painted squares, color, sensitivity, depth settings, and the balls toggle. "Audio" covers clap sensitivity, the three volumes, music fade, and the selected microphone. "Voice Pack" and "Background Track" save which item is selected, not the audio files. "Theme" saves the active theme, including custom colors (more on themes later). "Misc" saves mirror mode and whether the depth diagram is flipped.
 
 ---
 
@@ -65,8 +66,8 @@ The parameters `--platform` and `--arch` may need to be changed depending on you
 - **Subfolders**: Further organize custom levels into one of five subfolders within the custom levels tab. Rename subfolders at the bottom of the custom level editor menu. Unused subfolders are hidden in the level select screen to reduce clutter; if only one subfolder is used, the subfolders are hidden completely. Reduce visual clutter when loading custom levels for editing by filtering on a specific subfolder.
 - **Prerequisites**: Levels may now require completion of a previous level(s), with a specific rank or better, in order to unlock and play. Default levels have had prerequisites assigned based on other default levels. Custom levels can have prerequisites customized to include default levels or other custom levels. Deleting a custom level will automatically remove it as a prerequsite for all relevant levels.
 - **Difficulty Score**: Levels have a difficulty score assigned to them, between 1 - 10. This score is automatically calculated for all levels, but can be manually overwritten for custom levels.
-- **Custom Voice Support**: Each task in a custom level can support custom voice lines, using the custom voice categories of a voice pack, by selecting the "Show Custom Voice Lines" checkbox. Level summary audio can be configured for each rank (fail, pass, good, and perfect) using standard or custom audio categories. 
-- **Quality of Life Features**: The custom level editor gained many smaller QoL improvements, including; task numbering, additional task addition bar at the bottom of the task list, copy/paste function to save and load a task type with its configuration data, and a fast transition toggle for each task to skip feedback and immediately transition to the next task.
+- **Quality of Life Features**: The custom level editor gained many smaller QoL improvements, including; task numbering, a second task addition bar at the bottom of the task list, copy/paste function to save and load a task type with its configuration data, and a fast transition toggle for each task to skip feedback and immediately start the next task.
+- **Bulk Import and Export**: Save all levels in a folder at once, and import all levels in a given directory.
 
 ---
 
@@ -82,7 +83,7 @@ The parameters `--platform` and `--arch` may need to be changed depending on you
 ## 9: Profiles and Progression
 
 - **'Achievements' --> 'Profiles'**: The 'Achievements' tab has been renamed to 'Profiles', as its scope has been expanded.
-- **Profile Management**: Create, copy, and delete profiles at the user's discression. Profiles track stats, achievements, and level progression independently of each other. Only the current profile is updated when a level is completed.
+- **Profile Management**: Create, copy, and delete profiles at the user's discression. Profiles track stats, achievements, and level progression independently of each other. Only the current profile is updated when a level is completed. Export and import profiles similar to custom levels.
 - **Stats and Achievement Tracking**: Set a toggle to enable/disable stat tracking, achievement progress, and prerequisite credit for any profile.
 - **Default Profile Bypass**: The default level has an additional toggle 'Bypass Level Requirements'; enable this option to skip level prerequisites at the cost of stat and achievement tracking.
 
@@ -90,7 +91,19 @@ The parameters `--platform` and `--arch` may need to be changed depending on you
 
 ## 10: Webcam Captures
 
-- **Capture Behavior:** Optional .jpg photos and .mp4 videos captures during gameplay, timed around tasks, with HUD status and tallies in the level summary.
+- **Capture Behavior:** Optional .jpg photos and .mp4 videos captures during gameplay, intelligently timed around tasks, with HUD status and tallies in the level summary.
 - **Consent Layers**: Multiple security/consent layers included to prevent unwanted captures, including restricted feature to Electron-packaged application only, and gates per profile, per level and per session via pre-play confirmation; all must pass before taking captures. Default profile and levels both force disable all captures; a custom profile and custom level are required.
 - **Configuration**: Adjust capture percentage chances, capture type preferences, and bias towards visible or hidden notifications on capture.
 
+---
+
+## 11: ElevenLabs Voice Generation Tweaks
+
+- **Tweaks and Improvements**: Borrowed the ElevenLabs voice generation code from v19, and made several improvements; generate multiple variants for the same lines, batch-generate for multiple categories, listen to and delete lines without switching tabs, and re-generate in place with one button.
+
+---
+
+## 12: Themes
+
+- **Built-In Themes**: The default UI uses a blue version of the modern UI introduced in v21. Use the 'Themes' tab to switch between the original red UI, dark mode, or the classic React cyan colors.
+- **Create Your Own**: Create any number of custom themes by changing the four color options to your preference. Save and load from the 'Themes' tab or on settings import.

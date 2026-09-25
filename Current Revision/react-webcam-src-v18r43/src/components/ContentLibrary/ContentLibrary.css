@@ -1,0 +1,138 @@
+.content-library {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.library-controls {
+    margin-bottom: 20px;
+}
+
+.packs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.audio-pack-card {
+    border: 1px solid var(--line);
+    border-radius: 1.5rem;
+    padding: 16px;
+    background-color: var(--surface);
+    color: var(--ink);
+    box-shadow: var(--shadow-sm);
+}
+
+.audio-pack-card.active {
+    border-color: var(--success);
+    background-color: color-mix(in srgb, var(--success) 14%, var(--surface));
+}
+
+.pack-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.pack-header h3 {
+    margin: 0;
+}
+
+.active-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.65rem;
+    flex-shrink: 0;
+    padding: 0.7rem 1rem;
+    border: 1px solid color-mix(in srgb, var(--success) 35%, var(--line));
+    border-radius: 99rem;
+    color: var(--success);
+    background: color-mix(in srgb, var(--success) 12%, var(--surface));
+    font-size: 1.1rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.pack-metadata {
+    margin-bottom: 12px;
+    font-size: 0.9em;
+    color: var(--muted);
+}
+
+.pack-metadata div {
+    margin-bottom: 4px;
+}
+
+.pack-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.import-dialog-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: color-mix(in srgb, var(--ink) 50%, transparent);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.import-dialog {
+    background-color: var(--surface);
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-radius: 1.5rem;
+    box-shadow: var(--shadow-sm);
+    padding: 24px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.dialog-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.dialog-header h3 {
+    margin: 0;
+}
+
+.button-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+    height: auto;
+    margin: 0;
+    padding: 0.4rem;
+    border: none;
+    border-radius: 1.2rem;
+    color: var(--muted);
+    background: none;
+    box-shadow: none;
+    letter-spacing: 0;
+    text-transform: none;
+    cursor: pointer;
+}
+
+.button-icon:hover,
+.button-icon:focus-visible {
+    color: var(--ink);
+    background: var(--surface-soft);
+    box-shadow: none;
+    transform: none;
+}
+
+.dialog-content {
+    margin-top: 16px;
+}

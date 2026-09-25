@@ -1,0 +1,332 @@
+import React, { useState } from 'react'
+import { TaskType, calculateHitDepthTimeLimit, calculateClapTimeLimit, calculateSpeakTimeLimit, SpeakMode } from '../Tasks/task'
+import TaskForm from './TaskForm'
+import { getRandomInt } from '../randomInt'
+import {
+    getDefaultHoldAudioHalfway,
+    getDefaultHoldAudioThreeQuarter,
+} from './taskAudioConfig'
+
+/** Human-readable task type for paste label (matches + Add buttons). */
+const CLIPBOARD_TASK_TYPE_LABEL = {
+    [TaskType.GETREADY]: 'Get Ready',
+    [TaskType.REST]: 'Rest',
+    [TaskType.HOLDPOSITION]: 'Hold',
+    [TaskType.UPANDDOWN]: 'Up/Down',
+    [TaskType.HITDEPTH]: 'Hit Depth',
+    [TaskType.CLAP]: 'Clap',
+    [TaskType.HOLDANDCLAP]: 'Hold and Clap',
+    [TaskType.FINISH]: 'Finish',
+    [TaskType.ENDLESS]: 'Endless',
+    [TaskType.SPEAK]: 'Speak',
+    [TaskType.BLANK]: 'Blank',
+    [TaskType.CALIBRATION]: 'Calibration',
+}
+
+const ADD_TASK_GROUPS = [
+    {
+        id: 'training',
+        label: 'Training',
+        types: [ TaskType.HITDEPTH, TaskType.UPANDDOWN, TaskType.HOLDPOSITION, TaskType.HOLDANDCLAP],
+    },
+    {
+        id: 'interim',
+        label: 'Interim',
+        types: [TaskType.REST, TaskType.CLAP, TaskType.SPEAK],
+    },
+    {
+        id: 'special',
+        label: 'Special',
+        types: [TaskType.GETREADY, TaskType.FINISH, TaskType.ENDLESS],
+    },
+]
+
+/**
+ * TaskBuilder - Component for building and managing task list
+ * @param {Array} tasks - Array of task objects
+ * @param {function} onChange - Callback when tasks change
+ * @param {string} audioPackId - Optional audio pack ID to use for this level
+ * @param {object | null} clipboardTask - Persisted task snapshot for paste (optional)
+ * @param {function} [onCopyTask] - (index) => void
+ * @param {function} [onPasteTask] - () => void insert clipboard before a trailing Finish
+ * @param {function} [onClearClipboard] - () => void
+ */
+const TaskBuilder = ({
+    tasks,
+    onChange,
+    audioPackId = null,
+    clipboardTask = null,
+    onCopyTask,
+    onPasteTask,
+    onClearClipboard,
+}) => {
+    const hasReady = tasks[0]?.type === TaskType.GETREADY
+    const hasFinish = tasks[tasks.length - 1]?.type === TaskType.FINISH
+    const firstMovable = hasReady ? 1 : 0
+    const lastMovable = tasks.length - (hasFinish ? 2 : 1)
+    const isFixed = (index) => (index === 0 && hasReady) || (index === tasks.length - 1 && hasFinish)
+    const hasMiddleTasks = tasks.some((_, index) => !isFixed(index))
+    const [openBookends, setOpenBookends] = useState({ start: false, end: false })
+    const bookendRole = (index) => (index === 0 && hasReady ? 'start' : 'end')
+    const toggleBookend = (role) => {
+        setOpenBookends((prev) => ({ ...prev, [role]: !prev[role] }))
+    }
+
+    const addTask = (taskType) => {
+        const newTask = {
+            id: getRandomInt(),
+            type: taskType,
+            suppressFeedback: false,
+            // Set defaults based on task type
+            ...(taskType === TaskType.GETREADY && { timeLimit: 15 }),
+            ...(taskType === TaskType.HOLDPOSITION && {
+                targetDepth: 1,
+                time: 10,
+                repeat: 1,
+                timeLimit: 0,
+                audioHalfway: getDefaultHoldAudioHalfway(1),
+                audioThreeQuarter: getDefaultHoldAudioThreeQuarter(1),
+            }),
+            ...(taskType === TaskType.UPANDDOWN && { minDepth: 1, maxDepth: 2, tempo: 30, timeLimit: 30 }),
+            ...(taskType === TaskType.HITDEPTH && { targetDepth: 4, repeat: 1, timeLimit: calculateHitDepthTimeLimit(1) }),
+            ...(taskType === TaskType.CLAP && { repeat: 3, timeLimit: calculateClapTimeLimit(3) }),
+            ...(taskType === TaskType.SPEAK && {
+                phrase: 'ready',
+                repeat: 1,
+                speakMode: SpeakMode.SHORT,
+                timeLimit: calculateSpeakTimeLimit(1),
+                audio: 'Speak.Speak1',
+                helpText: 'Say "ready"',
+            }),
+            ...(taskType === TaskType.HOLDANDCLAP && { targetDepth: 1, claps: 3, repeat: 3, timeLimit: 0 }),
+            ...(taskType === TaskType.REST && { timeLimit: 10, ballsBonus: false }),
+            ...(taskType === TaskType.FINISH && { timeLimit: 15 }),
+            ...(taskType === TaskType.ENDLESS && { timeLimit: 999, scoreEvents: [], repeatEvents: false, audio: 'Endless.ENDLESS' })
+        }
+        const insertionIndex = hasFinish ? tasks.length - 1 : tasks.length
+        onChange([...tasks.slice(0, insertionIndex), newTask, ...tasks.slice(insertionIndex)])
+    }
+
+    const updateTask = (index, updatedTask) => {
+        if (isFixed(index) && updatedTask.type !== tasks[index].type) return
+        const newTasks = [...tasks]
+        newTasks[index] = updatedTask
+        onChange(newTasks)
+    }
+
+    const deleteTask = (index) => {
+        if (isFixed(index)) return
+        const newTasks = tasks.filter((_, i) => i !== index)
+        onChange(newTasks)
+    }
+
+    const moveTask = (index, direction) => {
+        const destination = index + (direction === 'up' ? -1 : 1)
+        if (isFixed(index) || destination < firstMovable || destination > lastMovable) return
+
+        const newTasks = [...tasks]
+        newTasks[index] = tasks[destination]
+        newTasks[destination] = tasks[index]
+        onChange(newTasks)
+    }
+
+    const clipboardTypeLabel =
+        clipboardTask && clipboardTask.type != null ? String(clipboardTask.type) : ''
+
+    const clipboardPasteTitle =
+        clipboardTask && clipboardTask.type != null
+            ? CLIPBOARD_TASK_TYPE_LABEL[clipboardTask.type] ??
+              clipboardTypeLabel.replace(/\b\w/g, (c) => c.toUpperCase())
+            : ''
+
+    const pasteButtonLabel = clipboardTask
+        ? `+ Paste '${clipboardPasteTitle}'`
+        : '+ Paste Task'
+
+    const renderAddGroup = (group) => (
+        <div key={group.id} className="task-add-group">
+            <div className="task-add-group-label">{group.label}</div>
+            <div className="task-add-group-buttons">
+                {group.types.map((type) => (
+                    <button
+                        key={type}
+                        type="button"
+                        className="control-compact"
+                        onClick={() => addTask(type)}
+                    >
+                        + {CLIPBOARD_TASK_TYPE_LABEL[type] ?? type}
+                    </button>
+                ))}
+            </div>
+        </div>
+    )
+
+    const addTaskBar = (
+        <div className="task-add-bar">
+            <div className="task-add-column">
+                {ADD_TASK_GROUPS.filter((group) => group.id === 'training' || group.id === 'interim').map(
+                    renderAddGroup
+                )}
+            </div>
+            <div className="task-add-column">
+                {ADD_TASK_GROUPS.filter((group) => group.id === 'special').map(renderAddGroup)}
+                <div className="task-add-clipboard">
+                    <div className="task-add-group-label">Clipboard</div>
+                    <div className="task-add-clipboard-buttons">
+                        <button
+                            type="button"
+                            className="control-compact"
+                            onClick={() => onPasteTask?.()}
+                            disabled={!clipboardTask}
+                            title={
+                                clipboardTask
+                                    ? `Paste copied ${clipboardPasteTitle} task before a trailing Finish`
+                                    : 'Nothing in clipboard — use Copy on a task first'
+                            }
+                            aria-label={
+                                clipboardTask
+                                    ? `Paste copied ${clipboardPasteTitle} task before a trailing Finish`
+                                    : 'Paste task (clipboard empty)'
+                            }
+                            aria-disabled={!clipboardTask}
+                        >
+                            {pasteButtonLabel}
+                        </button>
+                        <button
+                            type="button"
+                            className="control-compact"
+                            onClick={() => onClearClipboard?.()}
+                            disabled={!clipboardTask}
+                            title={clipboardTask ? 'Remove copied task from clipboard' : 'Clipboard is already empty'}
+                            aria-label="Clear task clipboard"
+                            aria-disabled={!clipboardTask}
+                        >
+                            (Clear clipboard)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
+    
+    return (
+        <div>
+            <div style={{ marginBottom: '16px' }}>
+                <h4>Tasks</h4>
+                {addTaskBar}
+            </div>
+
+            <div>
+                {tasks.length === 0 ? (
+                    <div style={{ padding: '20px', textAlign: 'center', color: 'var(--muted)' }}>
+                        No tasks yet. Add a task to get started.
+                    </div>
+                ) : (
+                    tasks.map((task, index) => {
+                        const fixed = isFixed(index)
+                        const role = bookendRole(index)
+                        const expanded = !fixed || openBookends[role]
+                        const typeLabel = CLIPBOARD_TASK_TYPE_LABEL[task.type] ?? String(task.type)
+                        return (
+                        <div
+                            key={task.id || index}
+                            className={[
+                                'task-editor-row',
+                                fixed ? 'task-bookend' : '',
+                                fixed && !expanded ? 'task-bookend-collapsed' : '',
+                            ].filter(Boolean).join(' ')}
+                        >
+                            {hasReady && hasFinish && index === tasks.length - 1 && tasks.length === 2 && (
+                                <p className="task-middle-empty">Added tasks will go here.</p>
+                            )}
+                            {fixed && !expanded ? (
+                                <button
+                                    type="button"
+                                    className="task-bookend-summary control-compact"
+                                    aria-expanded="false"
+                                    aria-label={`Expand task ${index + 1}, ${typeLabel}`}
+                                    onClick={() => toggleBookend(role)}
+                                >
+                                    <span className="task-bookend-summary-marker" aria-hidden="true">▶</span>
+                                    <span className="task-bookend-summary-number">#{index + 1}</span>
+                                    <span>{typeLabel}</span>
+                                </button>
+                            ) : (
+                            <>
+                            {fixed && (
+                                <button
+                                    type="button"
+                                    className="task-bookend-label"
+                                    aria-expanded="true"
+                                    aria-label={`Collapse task ${index + 1}`}
+                                    onClick={() => toggleBookend(role)}
+                                >
+                                    <span aria-hidden="true">▼</span>
+                                    {task.type === TaskType.GETREADY ? 'Level Start' : 'Level End'}
+                                </button>
+                            )}
+                            <div className="task-editor-rail">
+                                {!isFixed(index) && (
+                                    <>
+                                        <button
+                                            type="button"
+                                            className="control-compact"
+                                            onClick={() => moveTask(index, 'up')}
+                                            disabled={index === firstMovable}
+                                            style={{ opacity: index === firstMovable ? 0.3 : 1 }}
+                                            aria-label={`Move task ${index + 1} up`}
+                                        >
+                                            ↑
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="control-compact"
+                                            onClick={() => moveTask(index, 'down')}
+                                            disabled={index === lastMovable}
+                                            style={{ opacity: index === lastMovable ? 0.3 : 1 }}
+                                            aria-label={`Move task ${index + 1} down`}
+                                        >
+                                            ↓
+                                        </button>
+                                    </>
+                                )}
+                                <button
+                                    type="button"
+                                    className="control-compact"
+                                    onClick={() => onCopyTask?.(index)}
+                                    disabled={!onCopyTask}
+                                    style={{ opacity: !onCopyTask ? 0.35 : 1 }}
+                                    title={`Copy task ${index + 1} (${String(task.type)}) to clipboard`}
+                                    aria-label={`Copy task ${index + 1} to clipboard`}
+                                >
+                                    Copy
+                                </button>
+                            </div>
+                            <TaskForm
+                                fixed={isFixed(index)}
+                                task={task}
+                                taskNumber={index + 1}
+                                onChange={(updatedTask) => updateTask(index, updatedTask)}
+                                onDelete={() => deleteTask(index)}
+                                audioPackId={audioPackId}
+                            />
+                            </>
+                            )}
+                        </div>
+                        )
+                    })
+                )}
+            </div>
+
+            {hasMiddleTasks && (
+                <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--line)' }}>
+                    <h4>Tasks</h4>
+                    {addTaskBar}
+                </div>
+            )}
+        </div>
+    )
+}
+
+export default TaskBuilder
+

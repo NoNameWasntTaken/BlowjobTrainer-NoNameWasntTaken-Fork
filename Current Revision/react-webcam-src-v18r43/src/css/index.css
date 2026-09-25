@@ -1,0 +1,245 @@
+body {
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #ffffff;
+  /* background-color: #eee;
+  color: #282c34; */
+  /* color: #eee;
+  background-color: #282c34; */
+  box-sizing: border-box;
+}
+
+
+pre {
+  text-align: left;
+}
+
+* {
+  /* border: 1px solid rgba(255, 0, 0, 0.26); */
+}
+
+/* 
+.container {
+  max-width: 900px;
+  width: 100%;
+  margin: 0 auto;
+  padding-top: 1em;
+  display: flex;
+  flex-direction: column;
+} */
+
+.top-row {
+  display: flex;
+}
+
+.sidebar {
+  flex: 1;
+  padding: 1em;
+}
+
+.controls {
+  flex: 3;
+  padding: 1em;
+  overflow: hidden;
+}
+
+/* Main content styles */
+.content {
+  padding: 15px;
+}
+
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+img.avatar {
+  width: 300px;
+  border-radius: 8px;
+  border: 1 px solid #191b1f;
+  margin: auto;
+  display: block;
+}
+
+label {
+  margin: 10px;
+  padding: 10px;
+  vertical-align: middle;
+}
+
+input.controls {
+  font-family: monospace;
+  padding: 0.2em 0em 0.2em 0.5em;
+  margin: 10px;
+  width: 5em;
+}
+
+/* button {
+  padding: 6px 6px;
+  margin-left: 10px;
+  margin-right: 10px;
+} */
+
+.monospaced {
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.bold {
+  font-weight: bold;
+}
+
+/* 
+h4 {
+  margin-top: 8px;
+  margin-bottom: 8px;
+} */
+
+/* Marker-related styles moved to src/css/markers.css */
+
+li {
+  text-align: left;
+}
+
+.debug-state-display {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 1000;
+  max-width: 300px;
+  max-height: 400px;
+  overflow: auto;
+  pointer-events: none;
+}
+
+.debug-state-display pre {
+  margin: 0;
+  padding: 8px;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.6);
+  background-color: rgba(255, 255, 255, 0.7);
+  border-radius: 4px;
+}
+
+.play-time {
+  /* display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 38px;
+  padding: 0px 15px;
+  border-radius: 4px; */
+  background-color: var(--surface-soft);
+  /* letter-spacing: .1rem;
+  text-transform: uppercase;
+  text-decoration: none; */
+}
+
+/* Profiles tab — main stats title */
+.stats-section-heading {
+  text-align: left;
+}
+
+/* Red outline destructive control; pair with class `button` (e.g. Delete All Custom Content). */
+.button.button-danger-outline {
+  color: var(--danger);
+  background-color: var(--surface);
+  border: 2px solid var(--danger);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--danger) 15%, transparent);
+}
+
+.button.button-danger-outline:hover,
+.button.button-danger-outline:focus {
+  color: var(--danger);
+  background-color: color-mix(in srgb, var(--danger) 12%, var(--surface));
+  border-color: var(--danger);
+  outline: 0;
+}
+
+.button.button-danger-outline:focus-visible {
+  outline: 2px solid var(--danger);
+  outline-offset: 2px;
+}
+
+/* Stats — confirm before delete-all-custom countdown */
+.stats-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: color-mix(in srgb, var(--ink) 50%, transparent);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.stats-confirm-dialog {
+  background-color: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 1.5rem;
+  padding: 1.5rem;
+  max-width: 28rem;
+  width: 100%;
+  box-shadow: var(--shadow-sm);
+}
+
+.stats-confirm-dialog h3 {
+  margin: 0 0 0.75rem;
+  font-size: calc(1.25rem + 2pt);
+  font-weight: 700;
+  color: var(--danger);
+}
+
+.stats-confirm-dialog p {
+  margin: 0 0 1.25rem;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+
+.stats-confirm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+/* Profiles tab — export/import sits above the active profile card, without that card's fill */
+.profile-file-section {
+  max-width: 480px;
+  margin-left: auto;
+  margin-right: auto;
+  background: none;
+  text-align: center;
+}
+
+.profile-file-section-note {
+  margin: 0;
+  font-size: 0.9rem;
+  opacity: 0.88;
+  line-height: 1.35;
+}
+
+/* Profiles tab — row labels in the active profile card */
+.profile-manager-card .card-row {
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.profile-manager-card .profile-option-row {
+  padding: 1.4rem 0;
+}
+
+.profile-manager-row-heading {
+  font-size: 2rem;
+  font-weight: 500;
+  line-height: 1.3;
+  letter-spacing: -0.04rem;
+  flex-shrink: 0;
+}
+
+@media (min-width: 550px) {
+  .profile-manager-row-heading {
+    font-size: 2.2rem;
+  }
+}

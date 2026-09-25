@@ -1,12 +1,52 @@
 # Hidden Content — Explanation
 
-This companion log documents the Hidden Content feature not mentioned in 'CHANGELIST.txt.' Hidden content is an intentionally undocumented feature in the main document; it is described here instead, where it is the sole focus.
+This companion log documents the Hidden Content feature not mentioned in 'ChangeList.md.' Hidden content is an intentionally undocumented feature in the main document; it is described here instead, where it is the sole focus.
 
 On the "Help" tab, hovering over the version number and clicking 5 times in quick succession will toggle hidden content visibility. When hidden content is visible, all custom content - voice packs, background music, custom levels, and user profiles - can be designated as a hidden content item. All items set to hidden will be concealed if hidden content visibility is toggled to off - they will still exist in data, but they will not appear anywhere in menu selection.
 
 Custom level subfolders maintain two copies of displayed names; one for when hidden content is concealed (shown by default), and one for when hidden content is visible. This is to avoid giving away the presence of hidden levels in custom subfolders; a named folder with no levels could raise suspicion.
 
-The rest of this document is structured similarly to 'CHANGELIST.txt', providing an overview of a revision's changes and the details of modified files. As mentioned, any changes not related to hidden content are not discussed here; they are discussed in 'CHANGELIST.txt'. For revisions 20 and 23, combine the changes listed in this document with those in the main change list for the complete picture of all code changes.
+The rest of this document is structured similarly to 'ChangeList.md', providing an overview of a revision's changes and the details of modified files. As mentioned, any changes not related to hidden content are not discussed here; they are discussed in 'ChangeList.md'. For revisions 20, 23, 36, and 42, combine the changes listed in this document with those in the main changelist for the complete picture of all code changes. Any revision not listed here had no impact on hidden content.
+
+
+
+
+# Revision 42 - Profile Export Keeps the Hidden Flag
+
+Profile export and import, added in the main changelist, include the profile **`hidden`** flag. A non-default profile exported while hidden content is visible comes back hidden. The Default profile cannot be imported as hidden. Voice-pack save and import still persist **`hidden`** the same way as before; open custom cue names do not clear it.
+
+
+
+## Modified Files
+
+src/services/profileExport.js
+- **`validatePlayerProfile`** keeps **`hidden`** as a boolean. A non-boolean value is rejected and saved data is left unchanged.
+- **`finalizeProfile`** runs the profile through **`normalizePlayerProfilesState`**. The Default profile is forced to **`hidden: false`**. Any other profile keeps **`hidden: true`**.
+- **`exportPlayerProfile`** / **`parsePlayerProfile`** round-trip that flag. Import as a new id copies **`hidden`** onto the new id.
+
+src/components/Achievements/ProfileManager.jsx
+- **Export Profile** writes the active profile, so a hidden profile can be exported only while hidden content is visible and that profile is selected. The profile list is still filtered with **`isVisibleInUi`**.
+- **Import Profile** stores the parsed profile, including **`hidden`**, and makes it the active profile. Import does not call **`revertHiddenActiveSelections`**. A hidden profile imported while content is concealed stays active for this session, but it does not appear in the profile list until hidden content is visible. App startup, and switching hidden content from visible to concealed, still return the active profile to Default when that profile is hidden.
+
+src/services/audioManager.js
+- Pack import still sets **`hidden`** from **`manifest.pack.hidden === true`** after the open-cue migration. Export still writes **`hidden: true`** only when the pack is hidden.
+
+
+
+
+
+# Revision 36 - Hidden Voice Packs Survive Audio Migration
+
+The audio-key migration runs on voice-pack load and save. A pack marked hidden stays hidden. The flag is not tied to the old **`Lvl_*`** category names.
+
+
+
+## Modified Files
+
+src/services/audioManager.js
+- **`loadPackFromStorage`** returns **`migrateAudioPack(raw).pack`**. Migration copies the pack object, so **`hidden`** is kept.
+- **`savePack`** migrates first, then stores **`hidden: pack.hidden === true`**.
+
 
 
 

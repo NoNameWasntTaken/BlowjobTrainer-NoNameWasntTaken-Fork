@@ -1,3 +1,1125 @@
+# Revision 43 - Version 22 Parity, Part 2: UI Overhaul and Themes
+
+The second of two major updates to align this fork with the mainline application as of version 22.
+
+This update ports the major UI overhaul that came with version 21 of the main fork. Several adjustments had to be made on account for different functionality, such as tab layout, camera preview, audio calibration, and level builder interfaces.
+
+This update also incorporates theme colors, allowing you to change the look between Modern Blue (the default), Modern Red (the v22 white-and-red palette), Dark (black and red), Classic (cyan and white), and saved custom themes.
+
+There were also tons of smaller UI tweaks, including:
+
+- The 'Loading...' splash screen has been overhauled to use a breathing radial color effect, and now adjusts size properly during sherpa-onyx prewarm  (finally!).
+- Tab reorganization, following a similar idea to main fork – primary tabs in the top row, auxillary tabs hidden in a dropdown menu 'More'. Tabs under 'More' all have the camera preview disabled.
+- The 'Content Library' and new 'Themes' tab was added to limited navigation modes.
+- Calibration export has been expanded to include more features. The export/import buttons have been moved out of 'Calibrate' and to its own utility helper outside of all other tabs, 'Setup'. Optionally choose what settings are exported before writing the file; import will change settings saved in the export and leave everything else alone.
+- Since settings export has been moved, the 'Calibrate' tab has been renamed 'Grids'. Remaining functionality is the same.
+- Reoganized the 'Audio' tab to better align with the 'Grid' tab's organization, for overall UI cohesion.
+- Extended the cap on fade-in and fade-out of background music from 10s to 30s each.
+- The tab title was changed from 'React App' to 'Trainer'.
+
+
+
+## Modified Files
+
+src/index.js
+- Imports **`themes.css`** before the other stylesheets.
+- Calls **`applyStoredTheme()`** before render, so **`data-theme`** is set before the first paint.
+
+src/components/Achievements/Stats.jsx
+- Dropped **`marginTop: '6rem'`** on the centered profile-actions row.
+
+src/css/typography.css
+- Links use **`var(--accent)`**. Link hover uses **`var(--accent-dark)`**.
+
+src/components/Mic/MicInputDevicePicker.js
+- The device list is a labeled **`#audio-device`** select in **`.audio-source`**, the same row as the camera source. The label reads “Audio Source:”.
+- **`Default microphone`** writes **`null`** (system default, no exact deviceId). Listed devices still put default-labeled inputs first.
+- A stored **`null`** is no longer rewritten to the default-labeled device id.
+- The permission prompt when labels are empty, and the **`devicechange`** refresh, are unchanged.
+
+src/atoms/audioAtom.js
+- **`micInputDeviceIdAtom`** comment: **`null`** is the Audio source “Default microphone” option.
+
+src/css/skeleton-light.css
+- Primary buttons, selected borders, and checkbox **`accent-color`** use **`var(--accent)`**. Warning buttons use **`var(--danger)`**.
+- **`.border-bottom`** uses **`var(--line)`**.
+- Form chrome the shell does not fully replace now uses theme tokens. **`input`**, **`textarea`**, and **`select`** borders are **`var(--line)`**. Select background is **`var(--surface)`**.
+- **`.not-a-button`** is **`var(--muted)`** on **`var(--surface)`**.
+- **`.number-control-btn`** is **`var(--muted)`**. Pressed and focused, it is **`var(--ink)`** on **`var(--surface)`**. **`.number-control-value`** dividers are dashed **`var(--line)`**, and the field is **`var(--surface)`**.
+- **`.colorreading-box`** and **`.shaftreading-box`** borders are **`var(--line)`**.
+- **`.mic-duration-number-control-scale`** shrinks the fade duration **`NumberControl`** to **`3.7rem`**, about 12% under the shell **`4.2rem`**. **`.mic-fade-checkbox-label`** is a flex row of that same height, so Fade In and Fade Out sit on the steppers under the Duration captions.
+
+src/css/index.css
+- **`.play-time`** background is **`var(--surface-soft)`**.
+- **`.button-danger-outline`** uses **`var(--surface)`**, with a danger mix on hover.
+- The stats confirm dialog uses **`var(--surface)`**, **`var(--ink)`**, and **`var(--text-secondary)`**.
+- **`.profile-manager-card .profile-option-row`** uses **`padding: 1.4rem 0`**, so the toggle title and its helper copy no longer overlap.
+
+src/App.css
+- Kept the loading ellipsis and the **`#video-container`** overflow rules. The v22 video max-height cap was not copied; preview height still comes from the viewport slider.
+- Added the shell: **`.app-shell`**, **`.app-header`**, **`.brand-lockup`**, **`.brand-eyebrow`**, **`.primary-navigation`**, **`.nav-button`**, **`.nav-button-play`**, **`.play-controls`**, **`.play-time`**, **`.nav-pause-button`**, **`.camera-card`**, and **`.content-panel`**.
+- **`.app-header-nav`** holds only the session row.
+- **`.utility-navigation`** sits under the header, **`position: relative`** and **`z-index: 2`**, so the Setup menu paints over the camera card. **`.utility-toggle`** cancels the shell button’s min-height, uppercase, and fill. **`.utility-tools`** is Setup then More, with **`gap: 1.8rem`**. Setup is **`translateY(-2px)`** so the labels line up.
+- **`.utility-navigation.is-collapsed`** cancels the header’s **`1.2rem`** bottom margin and uses **`0.45rem`** padding above and below, so Setup and More sit in the middle of a short gap. Opening More restores **`min-height: 3.8rem`** and **`margin-bottom: 1rem`**. Under **`760px`** the row stacks to the end and **`.utility-links`** is full width. The links are not in **`.primary-navigation`**, so they do not join the icon grid.
+- **`.utility-links .nav-button`** uses **`background: var(--surface)`** and **`border-color: var(--line)`**. The More-row tabs sit lighter than the page, the same relationship as v22’s secondary-row buttons, and the fill follows the active theme.
+- **`.setup-file`** is **`width: max-content`**. **`.setup-file-menu`** is **`14rem`**, **`max-width: none`**, **`right: 0`**, so Export settings and Import settings line up with Setup and open to the left.
+- **`.setup-export-dialog`** is portaled to **`document.body`** and uses **`container-type: inline-size`**. At **`36rem`** the options are two columns. Even options (Grids, Voice Pack, Theme) open their **`?`** tip to the left. A hovered or focused option is **`z-index: 3`** so the tip paints over the other column.
+- Header, cards, buttons, and selects use **`var(--surface)`** and **`var(--ink)`** instead of hardcoded white. Selects set **`background-color`** only, so the skeleton dropdown arrow stays.
+- **`.brand-lockup h1`** is **`clamp(2.6rem, 3vw, 3.2rem)`**.
+- Dropped the side padding on **`#video-container`**. Preview height is still the viewport slider; the v22 **`72vh`** / **`55vh`** video limits were not added.
+- **`.camera-card-header`** and **`.camera-card-header h2`**: the title is **`2.1rem`** (**`1.8rem`** under **`430px`**). **`.camera-status`** is the FPS pill, colored with **`var(--success)`**.
+- **`.camera-preview`** has **`margin-bottom: 2.2rem`**, so the feed sits above the footer’s **`border-top`**.
+- **`.camera-card-footer`** holds the source row and the adjust row. Footer labels have no margin or padding. The source label is **`var(--ink)`**; the height label is **`var(--muted)`**. The select **`min-width`** is **`20rem`**. Footer buttons have **`margin: 0`**.
+- **`.camera-card-footer-off`** uses **`justify-content: space-between`**. Under **`760px`** the other footer stacks, and this one stays a row so the mirror toggle remains on the right. The select there is **`width: 100%`** with **`min-width: 0`**.
+- **`.content-panel h2`** and **`.content-panel h3`** are **`2.1rem`**, the same size as the camera title. **`h4`** and **`h5`** stay on the Skeleton scale.
+- Labels inside **`.content-panel`**, **`.camera-card-footer`**, and **`.task-editor-card`** have no margin or padding, so the global **`label`** rule in **`index.css`** does not loosen those forms.
+- **`.mic-fade-settings`** is a two-column grid, **`column-gap: 12px`**, **`row-gap: 1rem`**, **`align-items: end`**, centered. **`.content-panel .mic-fade-checkbox-label`** is **`height: 3.7rem`** with no margin or padding, so the checkbox sits on the duration stepper instead of using **`padding-top: 1.5rem`**.
+- Removed the **`max-width: 480px`** rule that set every **`button`** to **`14px`** and **`8px 12px`**. That rule was overriding the shell nav. The container padding in that breakpoint stays.
+- **`.app-version`** sits under the shell in normal flow, the same width as **`.app-shell`** (**`min(100%, 1180px)`**), **`margin: 0.8rem auto 0`**, left-aligned, **`var(--muted)`**, **`1.1rem`**. It is not fixed, so it only shows at the end of the page.
+- **`.tab-title`** centers the page title (**`margin: 0 0 1.6rem`**). **`.content-panel h2.tab-title`** is **`3cap`**, which beats the **`2.1rem`** rule on panel **`h2`**. Section headings stay left. **`.tab-title-actions`** is a right-aligned row under the title.
+- **`.number-control-container`** is a three-column grid. **`--number-control-height`** and **`--number-control-side`** are **`4.2rem`**.
+- **`button.number-control-btn`** fills its cell: no shell min-height, margin, or padding. **`button.number-control-btn.minus`** uses **`padding-bottom: 0.14em`** so the Raleway hyphen sits on the center. Hover does not translate the button.
+- **`input[type="number"].number-control-value`** overrides the shell number field: no padding or min-height, spinners hidden, digit centered, **`line-height: calc(var(--number-control-height) - 2px)`**.
+- **`.audio-source`** uses the camera source row. **`margin-top: 2.4rem`** separates it from the calibration paragraph. The label is **`1.8rem`** and **`700`**. The select **`min-width`** is **`20rem`**. Under **`760px`** that select is **`width: 100%`** with **`min-width: 0`**.
+- **`.content-panel h2.loading-ellipsis`** is **`clamp(3.2rem, 5vw, 4.4rem)`**. **`.App:has(.app-shell--splash)`** is a column flex, and **`.loading-splash`** centers the word in the shell.
+- **`--splash-breath`** is **`4.5s`**. The word fades opacity only (no scale, so a width change can recenter it). The three dots build and unwind on that same cycle. **`.loading-splash::before`** is an accent ellipse (**`rgba(var(--accent-rgb), 0.4)`**, transparent at **`58%`**) whose opacity breathes from **`0.2`** to **`1`**.
+- **`.loading-ellipsis__dot`** is inline, **`width: 0.45ch`**, instead of absolutely positioned inside a **`3ch`** slot. That slot was wider than the painted dots and left empty space on the right, so “Running pre-flight checks...” and “Loading level and configuration...” sat to the right of the visible “Loading...”.
+- Handoff: **`--shell-exit`** is **`480ms`**, **`--shell-in`** is **`300ms`**. **`.app-shell--splash-exit`** is fixed over the shell and fades out. Then **`.app-header`**, **`.camera-card`** with **`.shell-cylinder`**, then **`.shell-tab`** fade in. **`prefers-reduced-motion`** holds a still tint and a steady “Loading...” and skips the enter animation.
+- Auto-start adds **`.app-shell--no-header`**. There is no header step. **`.camera-card`** and **`.shell-cylinder`** fade in at **`--shell-exit`**, and **`.shell-tab`** at **`--shell-exit` + `--shell-in`**.
+
+src/components/PlayTime.jsx
+- Class is **`not-a-button padding-x-sm play-time`**.
+
+src/components/Navigation.js
+- The bar is **`<header className="app-header">`**: brand lockup (**`APP_DISPLAY_TITLE`**, eyebrow "Practice Makes Perfect"), then one **`.primary-navigation`** row.
+- That row is Help, Grids, Audio, Buttplug, Content Library, Levels, and Play. Buttons use **`nav-button`** and **`is-active`**. Play adds **`nav-button-play`**. Pause uses **`nav-button nav-pause-button`**.
+- The Grids button uses the Feather **`Grid`** icon at **`size={18}`**, in place of **`Compass`**.
+- Under the header, while **`playState`** is not **`PLAYING`**, a **More** toggle (**`useState(false)`**, not stored) reveals Voice Pack Editor, Level Editor, Profiles, and Themes. Profiles sits immediately left of Themes. Setup sits in **`.utility-tools`** to the left of More. Closing More does not change **`navAtom`**.
+- Route handlers, the external-mode swap to **`LimitedNavigation`**, and **`useButtplug`** are unchanged. **`LimitedNavigation`** has no More row.
+
+src/components/Navigation/LimitedNavigation.jsx
+- Same header and **`nav-button`** classes. The eyebrow is "Practice Makes Perfect". Calibrate-only Done is **`nav-button nav-button-play`**. There is no More row.
+- The row is Help, Grids, Audio, Buttplug, Content Library, Themes, and Play. Themes uses the Feather **`Droplet`** icon at **`size={18}`** and routes to **`NAV.THEMES`**, in the slot Levels uses on the full bar. Calibrate-only keeps that row and swaps Play for Done. Content Library uses the Feather **`Folder`** icon at **`size={18}`** and routes to **`NAV.CONTENT_LIBRARY`**. Themes and Content Library follow the same **`disableNavigation`** rule as the other tabs.
+- While **`playState`** is not **`PLAYING`**, **`SetupFileMenu`** sits in **`.utility-navigation.is-collapsed.utility-navigation--limited`** / **`.utility-tools`** under the header. **`padding-right: 1.3rem`** matches the inset **More** gets from **`.utility-toggle`** (**`0.4rem`** row padding plus **`0.9rem`** button padding), so Setup sits under Play instead of on the shell edge. There is no More toggle. Calibrate-only keeps Setup up, since that mode does not enter **`PLAYING`**.
+- The calibration button uses the same Feather **`Grid`** icon at **`size={18}`**. The label stays **Grids**.
+
+src/App.js
+- Calls **`useApplyTheme()`**.
+- The root is **`container app-shell`**. Loading and error sit in **`main.content-panel`**.
+- The preview is **`section.camera-card`**. The cylinder stays outside that card and is still mirrored.
+- When the feed is off, the card is **`CameraCardHeader`** (no FPS), the “Camera is off” placeholder, then **`.camera-card-footer.camera-card-footer-off`**: **`CameraToggle`** on the left and **`MirrorToggle compact={false}`** on the right.
+- **`renderControls()`** is wrapped in **`main.content-panel`**. **`NAV.THEMES`** renders **`Themes`**.
+- **`hideCameraArea`** is true on Profiles (**`NAV.ACHIEVEMENTS`**), Level Editor, Voice Pack Editor, and Themes. In external mode Themes is a primary tab, so **`NAV.THEMES && !isExternalMode`** leaves the card up there. **`showCamera`** and **`showCameraArea`** are both false on a hidden route, so the camera card is not rendered. Play and game over still force the feed on when the card is shown.
+- **`finishLoading()`** sets **`exiting`**, or **`ready`** when reduced motion is on. The three startup paths that used to set **`ready`** call it. Auto-start waits **`1080ms`** (**`480 + 300 * 2`**). Other startups wait **`1380ms`** (**`480 + 300 * 3`**). Then **`exiting`** becomes **`ready`**.
+- **`renderLoadingSplash`**. **`initializing`**, **`checking`**, and **`loading`** render only the splash, so the main shell stays unmounted during preload. **`exiting`** renders that shell with **`app-shell--enter`** under the fixed splash. Auto-start also adds **`app-shell--no-header`** while exiting. **`Version`** is omitted while exiting. The cylinder wrapper is **`shell-cylinder`**. The tab wrapper is **`shell-tab`**.
+
+src/components/Version.js
+- Renders **`<p className="app-version">`** after **`.app-shell`**. The loading and error returns still omit it.
+
+src/components/Webcam/WebcamDisplay.js
+- The centered stack is a fragment inside the existing **`.camera-card`**: **`CameraCardHeader`** (with **`fps`**), **`.camera-preview`**, then **`.camera-card-footer`**.
+- The overlay FPS chip is gone. The preview wrapper measures **`100%`** of the card, and its **`maxHeight`** is still **`viewportHeightCap`** times the window height. Stage sizing, rotation, and the mirror transform are unchanged.
+- The device-button row is a **`#camera-device`** select on **`cameraVideoDeviceIdAtom`**. An empty value writes **`null`**, which keeps **`facingMode: 'user'`** and the existing webcam **`key`**.
+- While **`showCameraToggle`** is set, the adjust row is **`CameraToggle`**, the height slider, then **`CameraRotationToggle`** and **`MirrorToggle compact={false}`**. During play and game over that row stays hidden, and the select stays.
+
+src/components/Webcam/CameraToggle.js
+- Dropped the inline **`28px`** / **`10px`** size and the **`margin-x-sm`** / **`padding-x`** classes. The button uses the shell size. The label and video icon are unchanged.
+
+src/components/CameraRotationToggle.js
+- Same size cleanup. **`button-primary`** still applies when rotation is not **`0`**.
+
+src/components/MirrorToggle.js
+- Added **`compact`** (default **`true`**). The depth diagram keeps the **`28px`** button. The camera card passes **`compact={false}`** so that copy uses the shell size.
+
+src/css/score.css
+- Rows use surface-soft and ink. A fail is a danger mix. A penalty is **`var(--danger)`** with white text. Bonus points use **`var(--success)`**. Grades use muted, ink, or text-secondary.
+
+src/components/Training/Level.css
+- The checkmark stays **`var(--accent)`**. Difficulty is **`var(--muted)`**. A locked level uses **`var(--surface-soft)`**. The divider is **`var(--line)`**.
+
+src/components/Training/Training.jsx
+- Debug task rows alternate **`var(--surface-soft)`** instead of **`#f5f5f5`**.
+- The page title is **`<h2 className="tab-title">`** “Select a Level”.
+
+src/components/Achievements/Achievement.css
+- An incomplete icon is **`var(--muted)`**. The progress track is **`var(--line)`**. A completed border, icon, and bar stay **`var(--accent)`**.
+
+src/components/Cylinder/Cylinder.css
+- Section fill is **`var(--surface-soft)`**. Borders are **`var(--line)`**.
+- **`.cylinder-layout`** has **`margin-bottom: 2rem`**, so the depth diagram on Play sits above the content panel instead of resting on it.
+
+src/components/Cylinder/Cylinder.jsx
+- Idle is **`var(--surface-soft)`**. The target depth is **`var(--accent)`**. The secondary target is **`var(--accent-light)`**.
+- The diagram root is **`div.cylinder-layout`**.
+
+src/components/Cylinder/TaskInstructions.jsx
+- The instruction border color is **`var(--accent)`**.
+
+src/components/Cylinder/CircularCountdown.js
+- The track stroke is **`var(--line)`**. The progress stroke is **`var(--accent)`**. The label fill is **`var(--ink)`**.
+
+src/components/Playing/CountdownBar.js
+- The track is **`var(--line)`**. The fill is **`var(--accent)`** at the right depth and **`var(--muted)`** otherwise.
+
+src/components/Playing/HoldProgressBar.js
+- The shell uses the same track and idle fill as the countdown bar.
+
+src/hooks/useHoldProgress.js
+- The live fill written onto that bar is **`var(--accent)`** at the right depth and **`var(--muted)`** otherwise.
+
+src/components/Playing/GraceStatusBar.js
+- The empty track is **`var(--line)`**, or **`var(--danger)`** when a penalty is active. Standard grace is **`var(--success)`**. Temporary grace is **`var(--accent)`**.
+
+src/components/Playing/Playing.js
+- The Begin button, while loading, uses surface, ink, and line. The hidden-capture note is **`var(--text-secondary)`**.
+
+src/components/Playing/ClapDetector.js
+- The meter frame and the calibration caption use line, surface-soft, and muted.
+- The heading is **`h5`** “Clap Detection” in calibration and during play.
+- The calibration help paragraph is gone. That copy is in the Audio tab Help footer.
+- “Claps detected” and “Current threshold” are paragraphs, not **`h5`**, so they sit under the section title.
+
+src/hooks/useClapDetection.js
+- **`drawClapMeter`** fills the bar with **`--accent`** and strokes the threshold in **`--ink`** over a **`--surface`** halo. The canvas reads those tokens with **`getComputedStyle`**, because a canvas context does not accept **`var()`**.
+- While the mic is off, a **`MutationObserver`** on **`document.documentElement`** (**`data-theme`** and **`style`**) redraws the idle threshold when the theme changes.
+
+src/components/Playing/CaptureStatusIcons.js
+- Inactive, standby, and active glyphs are muted, ink, and danger. The chip background is a translucent surface.
+
+src/components/Gameover/Gameover.js
+- The external-mode closing countdown uses muted on surface-soft. Task rows divide with **`var(--line)`**.
+
+src/components/Timer.jsx
+- The timer chip uses surface-soft and ink.
+
+src/components/Calibration/Calibration.js
+- The camera-off note is **`var(--muted)`**.
+- The page title is **`<h2 className="tab-title">`** “Grid Calibration”.
+- The export and import buttons are gone. Complete Calibration still calls **`exportCalibration()`** with no section list, which writes the full snapshot.
+
+src/components/Calibration/calibrationExportService.js
+- **`exportCalibration(sections)`** forwards **`sections`** to **`calibrationService.exportCalibration`**. Omitting **`sections`** still exports every section.
+
+src/services/calibrationService.js
+- The v2.0 snapshot can include camera (rotation, viewport height cap, device id), grids (grids, depth percentages, balls depth, hysteresis), audio (clap sensitivity, sfx/voice/music volumes, both fade flags and durations, microphone id), voice pack id, background track id (or **`null`** for none), theme, and misc (mirror, depth-diagram invert). **`version`** and the timestamp are always written.
+- A sections argument copies only the checked groups. **`grids`**, **`depthPercentages`**, and **`hysteresis`** are optional, so a partial file still imports.
+- A preset theme exports only its id. A saved theme exports **`themeId: 'custom'`** plus that theme’s four colors. Importing a preset selects it. Imported custom colors update the active saved theme, or create one named Custom when none is active. The saved-theme list is not exported.
+- Unknown voice-pack ids (other than **`default`**) and unknown track ids are dropped on this machine. **`null`** background track is kept.
+- **`musicFadeInDuration`** and **`musicFadeOutDuration`** must be integers from **1** to **30**.
+
+src/atoms/navAtom.js
+- **`THEMES = 13`**.
+
+src/components/Achievements/ProfileManager.jsx
+- Helper copy under Track Stats, Bypass Level Requirements, Allow Webcam Captures, and Allow Hidden Capture Notifications uses **`marginTop: '0.6rem'`** instead of **`-1.5rem`**.
+- Those four rows add **`profile-option-row`**.
+
+src/components/Calibration/GridSelector.jsx
+- "Grid added" is **`var(--success)`**. A bad name is **`var(--danger)`**.
+- The Grid Name row uses **`alignItems: 'center'`**, so the Balls region checkbox lines up with the name label and field.
+
+src/components/Calibration/PercentControls.js
+- Validation text is **`var(--danger)`**.
+
+src/components/ColorReading.js
+- The placeholder swatch and borders use surface-soft and line. The RGB caption is muted. The sampled color fill is unchanged.
+
+src/components/ShaftReading.js
+- The subtitle is **`var(--muted)`**.
+
+src/css/editor.css
+- Bookend borders, the collapsed summary, and the empty-middle hint use line, surface-soft, and muted (the Revision 42 **`#666`** bookend text is **`var(--muted)`**).
+- Merged the v22 task-card rules: **`.task-editor-card`**, **`.task-editor-header`**, **`.task-editor-fields`**, **`.task-audio-selector`**, **`.task-audio-preview`**, **`.task-help-notes`**, and **`button.task-delete-button`**. The delete button keeps a fixed size so the shell's button min-height does not stretch it, and its tint is **`var(--danger)`**.
+- **`.control-compact`** is the one compact editor control: **`min-height: 36px`**, **`padding: 0 10px`**, **`8px`** radius, no shadow, **`1.1rem`**, and **`text-transform: none`**. Hover and focus do not lift. It does not restyle **`.number-control-btn`** or **`.task-delete-button`**. Play and Save stay on the shell's **`4.2rem`** uppercase buttons.
+- **`button.task-bookend-summary`** uses that size, stays left-aligned, and its radius is **`14px`** (the task-card radius) instead of **`4px`**.
+- Task cards sit in **`.task-editor-row`** with a **`7.2rem`** left gutter. **`.task-editor-rail`** holds Copy and move, each **`6.4rem`** wide so Copy is not clipped.
+- **`button.task-delete-button`** is **`36px`**, **`padding: 0 0 0.12em 0.06em`**, so the × sits on the optical center (same hyphen offset idea as the number-control minus).
+- Type and Voice Category selects (**`.task-type-select`**, **`.task-voice-category-select`**) use **`width: max-content`** and **`padding-right: 2.5rem`** so names clear the custom dropdown arrow. Voice Line selects use **`padding-right: 3.5rem`**. The type select border is **`var(--accent-border)`**.
+- Task-card fill and hairline mix **`var(--accent-soft)`** / **`var(--accent-border)`** with surface and line.
+- **`.task-add-bar`** is two **`max-content`** columns, **`column-gap: 4rem`**, **`padding-left: 1.6rem`**, **`margin-top: 1.2rem`** under the Tasks heading. The right column has a **`1px`** **`var(--line)`** divider. Group labels are muted **`1.1rem`**.
+- **`.level-editor .number-control-container`** is compact for the whole editor (metadata, capture settings, task fields, Endless events): **`32px`** sides and height, **`width: max-content`**, middle column **`4.8rem`** (not **`1fr`** / **`auto`**). **`.level-editor .number-control.margin-x`** zeros the wrapper’s **`1rem`** side margins. Calibrate / Audio / Buttplug keep the shell **`4.2rem`** grid.
+- Up/Down **`.task-tempo-select`**: **`32px`** height, **`margin-top: 4px`**, **`padding-right: 2.5rem`**, **`width: max-content`**, matching the number steppers beside it. **`.task-tempo-field`** does not shrink below **`max-content`**.
+- Rest **`.task-rest-balls`** pads to the number-control label line; the checkbox label is a centered **`32px`** row. Speak **`.task-speak-fuzzy-label`** is the same checkbox/text alignment (**`align-items: center`**, checkbox **`margin: 0`**).
+- Session summary: **`.summary-voice-list`** **`max-width: min(100%, 70rem)`** centered. **`.task-audio-selector.is-summary`** is a three-column grid (**`max-content` / `minmax(0, 27rem)` / `auto`**) with **`justify-content: center`**. Preview is a fixed **`12rem`**. The Summary/Custom toggle is **`8.4rem`**. Actions wrap under the cue at a **`32rem`** container query.
+
+src/components/LevelEditor/TaskForm.jsx
+- The card root is **`.task-editor-card`**, with **`.task-editor-header`** and **`.task-editor-fields`**.
+- Delete buttons keep **`.button-delete`** and add **`.task-delete-button`**.
+- Helper text, score-event rows, and the capture outline use muted, surface-soft, and line.
+- The **`fixed`** bookend behavior from Revision 42 is unchanged.
+- Each score-event row has **`.control-compact`**. The up and down buttons dropped their inline **`2px 6px`** / **`12px`** size so they use that compact size. A disabled move still sets its opacity inline.
+- Skip-feedback, script path, and per-task capture sit in a collapsed **Advanced** block. Opening it is UI-only (**`advancedOpen`**); it is not written on the task.
+- Voice is **Voice Category** (Task-Specific / Release / Custom) then **Voice Line**. Category is derived with **`voiceCategoryForSlot`**; changing depth, tempo, or type only overwrites a cue when that slot is Task-Specific. A saved cue outside the filtered list stays as **`{value} (not available in this list)`** via **`withSavedVoiceOption`**. Endless score-event rows and Session Summary Voice keep their own controls.
+- The type control is **`.task-type-select`**. Get Ready no longer has a Description field (**`task.desc`** was unused at play). Up/Down Tempo is **`.task-tempo-select`** with a centered heading. Rest Balls bonus uses **`.task-rest-balls`**. Speak fuzzy-match uses **`.task-speak-fuzzy-label`**.
+
+src/components/LevelEditor/TaskBuilder.jsx
+- The empty-list hint is **`var(--muted)`**. The divider under the task list is **`var(--line)`**.
+- The collapsed bookend button adds **`.control-compact`**.
+- **`ADD_TASK_GROUPS`**: Training (Hit Depth, Up/Down, Hold, Hold and Clap), Interim (Rest, Clap, Speak), Special (Get Ready, Finish, Endless). The add bar is two columns (Training+Interim | Special+Clipboard). New Get Ready tasks set **`timeLimit: 15`** only (no **`desc`**).
+- The lower add bar renders only when **`hasMiddleTasks`** is true (bookends-only levels show the top bar).
+
+src/components/LevelEditor/AudioSelector.jsx
+- The root is **`.task-audio-selector`**. Preview buttons are **`.task-audio-preview`**.
+- **`summaryStyle`** adds **`.is-summary`**. **`summaryExtra`** sits with Preview in **`.summary-voice-actions`**. Category selects use **`.task-voice-category-select`**. Summary Preview is **`.task-audio-preview-summary`**.
+
+src/components/LevelEditor/SummaryAudioEditor.jsx
+- The helper line is **`var(--muted)`**.
+- Each rank has a Type control: **Summary** / **Custom** (**`.summary-voice-mode-toggle`**), not a Show Custom Voice Lines checkbox. Toggling calls **`getSummaryModeDefaultCue`** (default Rank line, or the first custom cue / None). Preview is **`12rem`**. Rows stay centered in the summary grid.
+
+src/components/LevelEditor/LevelEditor.jsx
+- Helper copy, the capture-settings panel, the level-id code, and the capture-limit warning use muted, surface-soft, line, text-secondary, and danger.
+- The page title is **`<h2 className="tab-title">`** “Level Editor”. The **← Back to Training** row is gone; leaving the tab uses the main nav.
+- The root is **`.level-editor`** so compact NumberControl CSS covers metadata, capture settings, task cards, and Endless events.
+- **Import Level File** is a **`<button className="button padding-x margin-x">`** that clicks a hidden file input (**`importFileInputRef`**), matching **Export Level File**.
+
+src/components/AudioPackEditor/AudioPackEditor.css
+- Panels, rows, and hints use surface, surface-soft, line, ink, and muted.
+- Info banners use accent-soft and accent-dark. Warnings and errors use danger. A finished generate uses **`var(--success)`**.
+- Dropped the **`20px`** padding on **`.audio-pack-editor`**. The content panel already pads with **`clamp(1.8rem, 4vw, 4rem)`**. **`max-width: 1200px`** stays. **`.editor-subtab-panel`** still has its own **`20px`** padding.
+- **`.audio-file-row`** lays out the filename and the Play/Delete group on one flex row.
+
+src/components/AudioPackEditor/AudioPackEditor.jsx
+- Import error and warning banners use a danger mix on surface, with danger text.
+- The page title is **`<h2 className="tab-title">`** “Voice Pack Editor”.
+
+src/components/AudioPackEditor/AudioCategoryEditor.jsx
+- The category border, empty copy, and row background use line, muted, and surface-soft. Rename and add errors use danger.
+- Each uploaded file is **`.audio-file-row`**. Play and Delete sit in **`.control-compact`** and no longer set inline padding and font size.
+
+src/components/AudioPackEditor/AudioFileUploader.jsx
+- The upload track is **`var(--line)`**. The progress fill is **`var(--success)`**.
+
+src/components/Instructions/Instructions.js
+- The page title is **`<h2 className="tab-title">`** “Getting Started”. Section headings stay as they were.
+
+src/components/Mic/Mic.js
+- The page title is **`<h2 className="tab-title">`** “Audio Calibration”.
+- The opening help paragraph is gone. Audio Source is the first control under the title.
+- Speech Detection, Background Track Settings, and Volume Settings are **`h5`**. The speech-section help line is gone.
+- After Volume Settings: **`<hr />`**, **`<h3>Help</h3>`**, then the former intro plus the clap-threshold and speech-test notes as separate paragraphs, then a closing **`<hr />`**. That block is not **`mic-audio-section`**.
+- Fade In and Fade Out durations are **`NumberControl`**s with **`min={1}`**, **`max={30}`**, and **`step={1}`**. The row is **`.mic-fade-settings`**. Each duration sits in **`.mic-duration-number-control-scale`**.
+
+src/components/Mic/Mic.css
+- The comment now says each block starts with an **`h5`**. The spacing rule is unchanged.
+
+src/components/Buttplug/ButtplugComponent.js
+- The page title is **`<h2 className="tab-title">`** “Buttplug Integration”.
+
+src/components/Achievements/Achievements.js
+- The page title is **`<h2 className="tab-title">`** “Profiles”. The wrapper is a plain **`div`**, not **`padding-y`**, so the heading lines up with the other tab titles.
+
+src/components/ContentLibrary/ContentLibrary.jsx
+- The page title is **`<h2 className="tab-title">`** “Content Library”. “Voice Packs” stays a section heading.
+
+src/components/ContentLibrary/ContentLibrary.css
+- Pack cards use surface, ink, and line. The active card and badge use success. Dialogs use surface and ink. Metadata is muted.
+- Dropped the **`20px`** padding on **`.content-library`**. The content panel already pads with **`clamp(1.8rem, 4vw, 4rem)`**. **`max-width: 1200px`** stays.
+
+src/components/ContentLibrary/AudioPackCard.jsx
+- Delete is **`.button.button-warning`** instead of a hardcoded red fill.
+
+src/components/ContentLibrary/MusicTrackCard.jsx
+- Delete uses the same **`.button.button-warning`** class.
+
+src/components/ContentLibrary/ImportDialog.jsx
+- Error and warning banners use a danger mix on surface.
+
+src/components/ContentLibrary/MusicTrackImportDialog.jsx
+- The error line is **`var(--danger)`**.
+
+src/components/ExternalMode/AutoStartCameraChrome.jsx
+- The play/pause strip uses **`.play-controls`**, **`PlayTime`**, and **`.nav-button.nav-pause-button`**.
+
+src/components/ExternalMode/PauseTimer.jsx
+- The banner background is a danger mix. The text stays white.
+
+src/components/Mic/SpeechDetectionCalibration.js
+- The endpoint callback takes **`reset`** instead of the recognizer and stream, and calls **`reset()`** after appending the line.
+
+src/components/Playing/SpeakDetector.js
+- Match handling and the endpoint callback take **`reset`** instead of **`r`** and **`s`**. A match and an endpoint both call **`reset()`**.
+
+src/hooks/useSherpaMicTap.js
+- Holds a Sherpa session instead of the recognizer and stream. Arming, the RMS gate, and the silence timer stay on the page. **`feed`** sends each chunk. Partial text and **`onAfterDecodeRef`** run when a result comes back, with **`reset`** bound to **`session.reset()`**.
+
+src/services/sherpaOnnxPreloadService.js
+- Proxy over **`sherpaPreloadWorker.js`**. **`preloadSherpaOnnx`** and **`getSherpaOnnxReadyPromise`** still resolve when the model is ready (**`{ ready: true }`**). **`isSherpaOnnxReady`** is that flag.
+- **`acquireOnlineStream`** returns a session: **`feed`** (transfers a **`Float32Array`** copy), **`reset`**, **`setResultHandler`**, and **`release`**. **`releaseOnlineStream`** calls **`release`**. Results whose **`streamId`** is no longer current are ignored.
+
+src/components/LevelEditor/taskAudioConfig.js
+- **`getVoiceLineOptions`**, **`voiceCategoryForSlot`**, and **`withSavedVoiceOption`** drive the Task-Specific / Release / Custom split. Opening a saved task does not write **`audioMode`**.
+- **`getSummaryModeDefaultCue`** and exclusive Summary vs Custom lists in **`buildSummaryAudioRowOptions`**.
+- **`UPANDDOWN_AUDIO`** renames **`UpDown.ONE_THREE_MEDIUM`** and **`UpDown.ONE_FOUR_MEDIUM`** to **`UpDown.ONE_THREE_MED`** and **`UpDown.ONE_FOUR_MED`**. The 60 BPM tempo key is **`MED`** instead of **`MEDIUM`**.
+
+src/components/Tasks/audio.js
+- **`ONE_THREE_MEDIUM`** and **`ONE_FOUR_MEDIUM`** renamed to **`ONE_THREE_MED`** and **`ONE_FOUR_MED`**.
+
+src/components/AudioPackEditor/audioHelper.js
+- **`ONE_THREE_MEDIUM`** and **`ONE_FOUR_MEDIUM`** descriptions renamed to **`ONE_THREE_MED`** and **`ONE_FOUR_MED`**.
+
+src/components/Training/levels.js
+- Shipped Get Ready tasks still store **`desc`** on disk; the editor no longer edits that field. The 1-to-3 Up/Down cue is **`UpDown.ONE_THREE_MED`**.
+
+src/constants/audioRefAliases.js
+- **`UpDown.ONE_THREE_MEDIUM`** → **`UpDown.ONE_THREE_MED`**, **`UpDown.ONE_FOUR_MEDIUM`** → **`UpDown.ONE_FOUR_MED`**.
+
+src/utils/audioPackMigration.js
+- Pack key remap includes **`ONE_THREE_MEDIUM`** → **`ONE_THREE_MED`** and **`ONE_FOUR_MEDIUM`** → **`ONE_FOUR_MED`**.
+
+src/components/LevelEditor/levelBookends.js
+- Get Ready bookends no longer seed **`desc`**. Audio is still **`GETREADY_AUDIO[0]`**.
+
+src/components/LevelEditor/levelBookends.test.js
+- Asserts **`tasks[0].desc`** is **`undefined`**.
+
+src/components/LevelEditor/TaskBuilder.test.jsx
+- Covers grouped add-task bars (**`.task-add-bar`**, Training / Interim / Special / Clipboard).
+
+src/components/NumberControl.jsx
+- Wrapper class is **`number-control margin-x`** so the editor can zero side margins without touching Calibrate **`.margin-x`** buttons.
+
+public/index.html
+- **`<title>`** is **`Trainer`**.
+
+
+
+## New Files
+
+src/css/themes.css
+- Token names match v22: **`--ink`**, **`--muted`**, **`--line`**, **`--surface`**, **`--surface-soft`**, **`--page`**, **`--text-secondary`**, **`--accent`**, **`--accent-rgb`**, **`--accent-light`**, **`--accent-border`**, **`--accent-dark`**, **`--accent-soft`**, **`--success`**, **`--danger`**, and the two shadows.
+- **`:root`** is Modern Blue. **`[data-theme="modern-red"]`** is the v22 palette (page **`#fffafb`**, accent **`#b83e59`**), directly under that block. **`[data-theme="dark"]`** and **`[data-theme="classic"]`** follow. A saved theme writes its colors inline on top of Modern Blue.
+- **`html body`** paints **`var(--page)`** plus the accent radial gradient, and sets **`color: var(--ink)`**.
+- **`.theme-color-grid`** is three content columns, **`width: max-content`**, centered. **`.theme-picker`** is the labeled theme select. **`.theme-create-heading`** is the centered “Create Theme” subheading between the select and the swatches. **`.theme-save-row`** is the name field with Save as new and Delete.
+
+src/theme/theme.js
+- Preset ids are **`default`** (Modern Blue), **`modern-red`** (Modern Red, directly under Blue), **`dark`**, and **`classic`**. **`normalizeThemeId('custom')`** is still **`custom`**, so **`applyTheme('custom', colors)`** keeps **`data-theme="custom"`** and the inline variables. Any other unknown id falls back to **`default`**.
+- **`PRESET_THEME_COLORS`** is accent, page, ink, and danger for each built-in palette, matching **`themes.css`**.
+- **`trainer.theme`** stores a preset id or a saved theme id. **`trainer.theme.saved`** stores **`{ id, name, colors }`**. The first read with no saved list migrates **`trainer.theme.custom`** into one theme named Custom, and rewrites a stored id of **`custom`** to that saved id.
+- **`resolveStoredThemeId`** keeps a preset or a saved id and otherwise returns **`default`**. **`applyStoredTheme()`** overlays a saved theme’s colors; a preset clears the inline variables.
+- A saved theme still starts from Modern Blue, then **`derivedThemeColors`** fills the tokens that palette would otherwise leave blue: **`--accent-light`**, **`--accent-border`**, **`--accent-dark`**, **`--accent-soft`**, **`--muted`**, **`--text-secondary`**, **`--line`**, **`--surface-soft`**, **`--shadow-sm`**, and **`--shadow-lg`**. Accent steps come from the custom accent. Muted text, secondary text, and borders mix ink toward the page. A light ink uses a black shadow instead of the blue-slate one.
+- **`themeCustomStorage`** remains so that migration can read the old slot.
+
+src/theme/theme.test.js
+- Covers id and hex normalization, RGB channels, and the inline variables written for **`applyTheme('custom', colors)`**, including the derived accent steps and **`--muted`**.
+- **`modern-red`** is a kept preset id. A legacy **`custom`** id plus **`trainer.theme.custom`** becomes one saved theme named Custom and stays active. An unknown id falls back to Modern Blue. A saved id is kept.
+
+src/theme/useApplyTheme.js
+- **`useApplyTheme()`** overlays the selected saved theme, or the unsaved draft while a preset is selected and **`themeDraftActiveAtom`** is set. Otherwise it applies the preset and clears the inline variables.
+
+src/atoms/themeAtom.js
+- **`themeIdAtom`** and **`savedThemesAtom`** are **`atomWithStorage`** (**`getOnInit: true`**) on **`trainer.theme`** and **`trainer.theme.saved`**.
+- **`themeDraftAtom`** and **`themeDraftActiveAtom`** hold unsaved color edits while a preset is selected. They are not persisted.
+
+src/components/Theme/Themes.jsx
+- Route **`THEMES`**. One **`#theme-select`**: Built-in (Modern Blue, Modern Red, Dark, Classic) and Saved.
+- **`<h3 className="theme-create-heading">`** “Create Theme” sits between the select and the color swatches.
+- While a built-in theme is selected and the draft is inactive, the color fields show **`PRESET_THEME_COLORS`** for that theme. The first edit starts the draft from that palette. Color edits on a saved theme write back into that theme. The single name field renames the selected saved theme, or names the theme created by Save as new. Delete removes the selected saved theme and selects Modern Blue.
+
+src/components/SetupFileMenu.jsx
+- Setup opens Export settings and Import settings. Export opens a dialog, portaled to **`document.body`**, with Camera, Grids, Audio, Voice Pack, Background Track, Theme, and Misc. All start checked. Export is disabled when none are checked. Cancel and Escape write nothing.
+- Each option has a **`?`** button. Hover or keyboard focus shows what that section includes. Import is one click, then the file picker, and applies every key present.
+- Disabled while playing, which also closes the menu and the dialog.
+
+src/components/Webcam/CameraCardHeader.js
+- **`.camera-card-header`**: an **`h2`** reading “Camera Preview”, and **`.camera-status`** with the FPS when **`fps`** is passed. The camera-off card omits the pill.
+
+src/workers/sherpaPreloadWorker.js
+- Loads **`sherpa-onnx-asr.js`** and **`sherpa-onnx-wasm-main-asr.js`** with **`importScripts`**, using **`Module.locateFile`** for the wasm and data URLs. Builds the recognizer and the warm stream on this thread.
+- Protocol: **`init`**, **`acquire`**, **`feed`**, **`reset`**, **`release`** → **`ready`**, **`failed`**, **`acquired`**, **`acquireFailed`**, **`result`**.
+- **`feed`** accepts 16 kHz PCM, decodes, and posts **`text`** and **`isEndpoint`**. On an endpoint it reads the text, then **`recognizer.reset`**, before the next chunk, so each phrase is reported once.
+
+
+
+## Removed Files
+
+src/components/Mic/MicInputDevicePicker.css
+- Deleted with the device-button row. The audio source select uses the shell select styles.
+
+src/components/Calibration/CalibrationImport.jsx
+- Import on the Grids tab. Replaced by **`SetupFileMenu.jsx`**.
+
+src/components/Calibration/CalibrationExport.jsx
+- Export on the Grids tab. Replaced by **`SetupFileMenu.jsx`**.
+
+
+
+
+
+
+
+
+# Revision 42 - Version 22 Parity, Part 1: Features and Functionality
+
+The first of two major updates to align this fork with the mainline application as of version 22.
+
+This update focuses on features and functionality changes borrowed from v22, including:
+
+- Bookend 'Get Ready' and 'Finish' tasks locked in at the start and end, respectively, of each custom level (collapsable to reduce UI clutter, editable apart from task type).
+- Profile export and import on the Profiles tab, mirroring v22's 'Export Game Data' feature; save stats, achievements, and profile-specific toggle settings.
+- Custom voice categories are now created dynamically using free-form cue names, removing the hard cap of 40 custom categories. Legacy packs will migrate automatically, using display names as the new cue names.
+
+Additional quality of life improvements were made to the Voice Pack Editor:
+
+- Each voice line type is now a collapsable subsection, similar to the broad categories.
+- Now defaults to the voice pack currently selected in the Content Library, instead of a blank selection.
+
+
+
+## Modified Files
+
+src/components/LevelEditor/LevelEditor.jsx
+- Initial state and **`handleNewLevel`** set **`tasks`** to **`createLevelBookends()`**.
+- **`handleLoadLevel`** still assigns **`loadedLevel.tasks || []`**. Import and bulk import are unchanged.
+- **`handlePasteTask`** inserts the clipboard task before a trailing Finish (**`TaskType.FINISH`**). With no trailing Finish, the task is still appended.
+
+src/components/LevelEditor/TaskBuilder.jsx
+- **`hasReady`**, **`hasFinish`**, **`firstMovable`**, **`lastMovable`**, and **`isFixed`**: the first task is fixed only when it is Get Ready, and the last task is fixed only when it is Finish.
+- **`addTask`** inserts at **`length - 1`** when the list ends with Finish, instead of always appending.
+- **`updateTask`** ignores a type change on a fixed row. **`deleteTask`** returns immediately on a fixed row. **`moveTask`** no-ops on a fixed row and refuses a destination outside the movable range.
+- Fixed rows are collapsible via **`openBookends`** (default collapsed). The collapsed control is **`.task-bookend-summary`**, showing **`#{n}`** and the type label. The expanded row keeps **`TaskForm`**, with a **Level Start** / **Level End** heading that collapses it, and passes **`fixed`**.
+- When the list is only those two tasks, **`.task-middle-empty`** reads "Added tasks will go here."
+- Paste button title and aria-label say the task is pasted before a trailing Finish. The existing add-task buttons are unchanged.
+
+src/components/LevelEditor/TaskForm.jsx
+- Added **`fixed`** (default **`false`**).
+- The type **`<select>`** is **`disabled`** when **`fixed`** is true.
+- The delete button is omitted when **`fixed`** is true. Time, description, and audio stay editable.
+- Custom audio menus call **`getCustomAudioOptions(audioPackId)`** and **`getAudioOptionsForTaskType(..., audioPackId)`**. Those helpers no longer take a display-name map.
+
+src/css/editor.css
+- **`.task-bookend`**: block borders and spacing around a fixed row.
+- **`.task-bookend-collapsed`**: drops that spacing so the collapsed row stays thin.
+- **`.task-bookend-summary`** and **`.task-bookend-summary-number`**: the collapsed row (border **`#bbb`**, background **`#f9f9f9`**).
+- **`button.task-bookend-label`**: the expanded **Level Start** / **Level End** heading, used as the collapse control.
+- **`.task-middle-empty`**: centered hint between the two bookends, color **`#666`**.
+
+src/components/Achievements/ProfileManager.jsx
+- **Export Profile** and **Import Profile** sit in their own section above the **Active Profile** card, with no grey card fill. The buttons are centered on that card. Both are disabled while playing or on the level summary screen.
+- Export downloads the active profile. Import reads a JSON file up to 10 MB, shows name, play time, and unlocked achievement count, and writes only after confirm.
+- If the file’s **`id`** already exists, the choices are **Overwrite that profile** and **Import as a new id** (new UUID). The imported profile becomes the active profile.
+- Helper copy: the file is stats, achievements, and profile flags. Levels, voice packs, and calibration stay on their own exporters.
+- Status lines in that section, including **Profile export downloaded.**, clear after 4 seconds. A newer message replaces the timer.
+
+src/css/index.css
+- **`.profile-file-section`**: **`max-width: 480px`** and auto horizontal margins, matching **`.card`**, so the export/import block lines up with the Active Profile card. **`background: none`** and **`text-align: center`**.
+- **`.profile-file-section-note`**: the helper line under those buttons (0.9rem, opacity 0.88, line-height 1.35).
+
+src/components/AudioPackEditor/AudioCategoryEditor.jsx
+- **`dynamicCues`**, **`onAddCue`**, **`onRenameCue`**, and **`onDeleteCue`**.
+- A custom cue row shows the cue name. There is no display-name field.
+- **Add cue** submits **New cue key**. A rejected name stays in the field and shows the error returned by **`onAddCue`**.
+- Deleting the last file of a dynamic cue stores **`''`** so the row stays until **Delete cue**.
+- Each voice line starts collapsed. **`openFileSections`** records which keys are open. The line title is **`.audio-line-toggle`** (**`aria-expanded`**, **`aria-controls`**): the key name, then **▶** when collapsed and **▼** when open.
+- The open panel is **`.audio-files-panel`**: the uploader, the file list (or "No files uploaded"), and, for a custom cue, the **Rename key** field (**`aria-label`** **`Cue key for ${key}`**) and **Delete cue**. Category headings stay their own collapse.
+
+src/components/AudioPackEditor/AudioPackEditor.css
+- **`.audio-line-toggle`**: full-width title button for a voice line (no border or fill, bold, space-between so the marker sits on the right).
+- **`.audio-files-panel`**: **`margin-top: 4px`** under that title when the line is open.
+
+src/components/AudioPackEditor/GenerateLines.jsx
+- Custom subcategory options come from **`getGeneratableKeys(category, pack)`**. Each option’s text is the cue key.
+- An empty Custom category shows: "This pack has no custom cues yet. Add a cue in the Categories tab, then generate it here."
+- The variant heading is **`${selectedCategory}.${selectedKey}`**. **`customNames`** is no longer a prop.
+
+src/components/AudioPackEditor/audioHelper.js
+- **`AUDIO_HELPER.Custom`** keeps only **`desc`**: "User-defined cues. The cue name is what levels store. Older Custom1–Custom40 lines still work." The Custom1–Custom40 slot entries are removed.
+
+src/components/AudioPackEditor/AudioPackEditor.jsx
+- New packs no longer start with **`customNames`**.
+- The Custom category lists **`listCustomCueKeys(pack)`** and wires **`addCustomCue`**, **`renameCustomCue`**, and **`deleteCustomCue`**.
+- On mount, **`initialEditorState`** loads the Content Library’s active pack (**`activePackIdAtom`**, then **`audioManager.getActivePackId()`**). The built-in default pack still opens a blank new pack. **New Pack** still clears the editor.
+
+src/components/LevelEditor/AudioSelector.jsx
+- A Custom option’s label is **`${category}.${key}`**. Other pack categories still use **`${category}.${key} (custom)`**.
+
+src/components/LevelEditor/taskAudioConfig.js
+- **`getCustomAudioOptions(audioPackId)`** loads that pack (or the active pack when the id is null) and returns playable cues labeled **`Custom.<key>`**.
+- **`getAudioOptionsForTaskType`** and the hold-progress helpers take **`audioPackId`**. They no longer take a display-name map.
+
+src/services/audioManager.js
+- Load, save, import, and export run **`migrateAudioPack`**.
+- Import warns through **`validateCustomCueName`**, then migration drops invalid Custom keys.
+- Export writes **`audioRefAliases`** when that map is non-empty, and omits **`customNames`** when it is empty.
+
+src/utils/audioPackMigration.js
+- **`migrateAudioPack`** stamps **`customCueSchema: 'open'`**.
+- **`remapDisplayNamesToCueKeys`**: a non-empty **`customNames['Custom.<oldKey>']`** becomes the cue key. **`Custom.CUSTOM1`** labeled **`PhaseTwo`** is stored as key **`PhaseTwo`**, with alias **`Custom.CUSTOM1`** → **`Custom.PhaseTwo`**. Empty, invalid, or colliding labels leave the original key in place. A label with no file becomes an empty-string placeholder. **`Custom.*`** entries are then removed from **`customNames`**. An empty alias map is omitted. Level JSON is not rewritten.
+
+src/utils/generatableAudioKeys.js
+- **`getGeneratableKeys('Custom', pack)`** returns **`listCustomCueKeys(pack)`**.
+
+src/services/audioResolver.js
+- String refs pass through **`canonicalAudioReference`** (**`custom.`** → **`Custom.`**).
+- Each pack is read with that pack’s **`audioRefAliases`**, split on the first **`.`**.
+- An empty Custom value (**`''`** or **`[]`**) returns null and does not fall through. A missing key still falls through primary pack, then fallback pack, then default **`AUDIO`**.
+
+src/constants/audioRefAliases.js
+- **`normalizeAudioRef(ref, packAliases)`** walks **`packAliases`** with a cycle guard, then the static **`AUDIO_REF_ALIASES`** map.
+
+src/constants/customVoiceCategories.js
+- Comment only: **`CUSTOM_VOICE_SLOT_KEYS`** is the legacy Custom1–Custom40 list, not an allowlist. Packs may store any valid cue key, and those forty names stay valid.
+
+
+
+## New Files
+
+src/components/LevelEditor/levelBookends.js
+- **`createLevelBookends()`** returns a Get Ready task followed by a Finish task. Each task gets a new **`getRandomInt()`** id.
+- Get Ready: **`timeLimit: 15`**, **`desc: 'get ready'`**, **`suppressFeedback: false`**, **`showCustomVoiceLines: false`**, **`audio`** from **`GETREADY_AUDIO[0]`** (**`Level.BEGINT_1_START`**).
+- Finish: **`timeLimit: 15`**, the same feedback flags, **`audio`** from **`FINISH_AUDIO[0]`** (**`Finish.CLEAN`**).
+
+src/components/LevelEditor/levelBookends.test.js
+- Checks the seeded pair, default fields, audio refs, and distinct ids.
+
+src/components/LevelEditor/TaskBuilder.test.jsx
+- Collapsed bookends show the task number and type. Expanding one restores the locked type select and the **Level Start** heading.
+- Bookends stay fixed while middle tasks are added, reordered, and deleted.
+- A Get Ready or Finish added in the middle stays movable and deletable.
+- An existing task list and an empty list are not given bookends.
+
+src/services/profileExport.js
+- Format **`player-profile-v1`**: **`{ format, exportedAt, profile }`**.
+- **`validatePlayerProfile`** keeps **`id`**, **`name`**, flags, **`timeStats`**, **`diveStats`** (including **`HOLDANDCLAP`**), **`sessionStats`** (including **`levelScores`**), **`achievements`**, and **`performanceStats`**. Other keys are dropped. Bad numbers and bad types throw, and the message says saved data was not changed.
+- **`exportPlayerProfile`** / **`parsePlayerProfile`** run that result through **`normalizePlayerProfilesState`**, so Default cannot be hidden or capture-enabled and **`customLevelFolderNames`** cannot come back.
+- **`profileExportFileName`** is **`{name}-profile.json`**, with spaces turned into hyphens.
+
+src/services/profileExport.test.js
+- Round-trip, stripped secrets (ElevenLabs keys, pack blobs, level bodies, calibration, device ids), Default flag guards, and rejected formats.
+
+src/services/customAudio.js
+- **`normalizeCustomCueName`** trims the name and strips one leading **`custom.`**.
+- **`validateCustomCueName`** rejects an empty name, **`/`** or **`\`**, character codes below 32, and the exact keys **`__proto__`**, **`constructor`**, and **`prototype`**.
+- **`listCustomCueKeys`** returns every valid key in **`audioFiles.Custom`**, including an empty placeholder, sorted with numeric **`localeCompare`**. It does not invent unused Custom1–Custom40 slots.
+- **`getCustomAudioOptions`** lists playable cues only. The label is **`Custom.<key>`**.
+- **`addCustomCue`** stores **`''`** for the new key. **`renameCustomCue`** moves the file and writes **`audioRefAliases`** from **`Custom.<old>`** to **`Custom.<new>`**, retargeting aliases that pointed at the old ref. **`deleteCustomCue`** removes the key and any alias that sources or targets it. All three drop **`customNames`**.
+
+src/services/customAudio.test.js
+- Name validation, picker labels, audio modes, dotted-key resolution, empty Custom values, and primary-pack precedence.
+- Legacy Custom1–Custom40 keys still resolve. Extra cues are listed. Empty unused slots are not invented.
+- A rename of **`Custom7`** to **`hello`**, then to **`phase.two`**, keeps **`Custom.Custom7`** playing through the alias chain.
+- Migration turns **`Custom.CUSTOM1`** with display name **`PhaseTwo`** into key **`PhaseTwo`**, and **`Custom.CUSTOM1`** still resolves to that clip.
+
+
+
+
+
+
+
+
+# Revision 41 - Fast-Transition Smoothing, Bulk Custom Level Import/Export, Miscellaneous Tweaks
+
+Tasks with the "Skip Feedback (fast transition)" toggle enabled have had their transitions improved for smoothness and fairness in scoring. No changes to behavior when this toggle is disabled. Changes include:
+
+- UpDown: BPM is now inherited from the previous task, if said previous task was also an UpDown task. Scoring is skipped on a leftover half-stroke carried over from the previous task.
+- Hold and HoldAndClap: Now require a brief 'dwell' period of 400ms at the target depth on the first hold before scoring begins. If the user withdraws before this (from a previous task's instructions), a failure will not be recorded.
+- Hit: Carried over depth is reset until the user goes above the target depth, preventing auto-completed or auto-failed hits.
+- Buttplug.io: Vibration now carries over between fast-transitioning tasks, instead of dropping to zero.
+
+The custom level editor now has 'Export All Levels' and 'Import All Levels' buttons. These reuse the individual level export/import functionality across all levels in the current folder / in the selected directory, respectively.
+
+Balls bonuses now award 1 point every 1 second, instead of 3 points every 3 seconds. This is just to improve consistency.
+
+The Mirror Mode button now appears below all camera-related options, including camera selection. Now the button grouping actually makes sense.
+
+In Hit tasks, hits now reset for the next attempt on any depth shallower than the target, not only one level shallower. Surface behavior is unchanged.
+
+
+
+## Modified Files
+
+src/components/Webcam/WebcamDisplay.js
+- Removed **`MirrorToggle`** from the **`CameraToggle`** / **`CameraRotationToggle`** column.
+- Rendered **`MirrorToggle`** after the camera device list, still gated by **`showCameraToggle`**.
+
+src/components/Playing/Diving.js
+- Imports BPM helpers from **`diveTempo.js`**; removed the local **`calculateTempo`**.
+- Seeds **`motion.downTempo`** from **`task.startingBpm`** (**`seededBpm`**, gated by **`isPlausibleBpm`**) when an Up-and-Down task inherits a starting BPM.
+- Added **`pendingStartingBpmRef`**, **`skipLeftoverScoreRef`**, and **`suppressNextUpTempoRef`** (reset on task setup) to manage the leftover half-stroke after a skip handoff.
+- New **`resolveStrokeTempo`** helper: uses the inherited BPM for the first half-stroke, then measured values.
+- Skips scoring the first **`dir === 'up'`** stroke when a starting BPM was seeded, so the carried-over stroke cannot cause a false fail.
+- Passes the last measured BPM to **`onTaskOver`** via **`{ lastBpm: getAverageMotionBpm(motionRef.current) }`**; **`myTempo`** now uses **`getAverageMotionBpm`**.
+
+src/atoms/buttplugAtom.js
+- Added **`preserveVibrationAtom`** (default **`false`**): when set, unmount/idle stops that would zero vibration are skipped so a fast transition can carry intensity into the next task.
+
+src/hooks/useButtplug.js
+- Added exported **`stopVibrationUnlessPreserved(stopFn)`**: no-ops while **`preserveVibrationAtom`** is set; used for unmount/idle stops (intentional stops still call **`stopVibration`** directly).
+- Unmount cleanup now calls **`stopVibrationUnlessPreserved(stopVibration)`**.
+
+src/components/Playing/Playing.js
+- **`gotoNextTask`** accepts **`skipHandoff`**; clones the next task to set **`skipHandoff`** (all task types) and **`startingBpm`** (Up-and-Down only). The no-more-tasks/gameover path clears **`preserveVibrationAtom`** and zeroes **`vibrateSpeedAtom`**.
+- **`onTaskOver`** sets **`preserveVibrationAtom`** before the unmounting **`setCurrentLevel`** when a next task exists, forwards **`startingBpm`** / **`skipHandoff`**, then clears the flag via **`queueMicrotask`**; the normal 2s path clears the flag.
+- **`cancelLevel`** clears **`preserveVibrationAtom`** and zeroes vibration (cancel never carries vibration forward).
+
+src/hooks/usePlayPauseHandler.js
+- Clears **`preserveVibrationAtom`** on every play/pause so a pause always wins and vibration actually zeroes.
+
+src/components/Playing/HoldDepth.js
+- Added **`SKIP_HOLD_DWELL_MS`** (400ms), **`handoffArmRef`** (from **`task.skipHandoff`**), and **`dwellTimerRef`**.
+- While armed, the state machine ignores all scoring/penalty/transition logic and only arms a dwell timer once stably at the target depth; leaving depth cancels it. When it fires, the hold starts normally.
+- **`holdStart`** disarms the handoff, clears the dwell timer, and marks started; **`hasStarted`** stays false while armed; the idle-vibration branch keeps inherited vibration while parked.
+
+src/components/Playing/HoldAndClapDetector.js
+- Same dwell-arm handoff as **`HoldDepth.js`** (**`SKIP_HOLD_DWELL_MS`**, **`handoffArmRef`**, **`dwellTimerRef`**), including the parked state machine, **`holdStart`** disarm, guarded **`hasStarted`**, and preserved idle vibration.
+
+src/components/Playing/HitDepth.js
+- Added **`handoffActiveRef`** (from **`task.skipHandoff`**). While active, carried-over depth is reflected (parks at **`AT_DEPTH`** when at/past target) but never scored; a genuine reset to the surface disarms the handoff and arms real scoring for the first deliberate hit.
+- **`hasStarted`** stays false while parked, so leftover depth cannot trigger a surface penalty or failure.
+- Hit reset: **`AT_DEPTH`** now arms the next attempt when **`depthDifference < 0`**, not only **`=== -1`**, so skipped shallower depths still reset. Depth **`0`** with target **`> 1`** still falls through to **`hitFailed()`**.
+
+src/components/Playing/ClapDetector.js
+- Unmount cleanup wraps **`stopVibration`** with **`stopVibrationUnlessPreserved`**.
+
+src/components/Playing/SpeakDetector.js
+- Unmount cleanup wraps **`stopVibration`** with **`stopVibrationUnlessPreserved`**.
+
+src/components/Playing/EndlessDive.js
+- Unmount cleanup wraps **`stopVibration`** with **`stopVibrationUnlessPreserved`**.
+- Comment updated to match 1 pt/s balls-bonus scoring.
+
+src/components/Playing/RestBallsBonus.js
+- Unmount cleanup wraps **`stopVibration`** with **`stopVibrationUnlessPreserved`** (the balls-bonus idle stop is unchanged).
+
+src/components/Playing/endlessScoring.js
+- **`BALLS_BONUS_INTERVAL_SEC`** and **`BALLS_BONUS_PER_INTERVAL`** (and unused **`BALLS_BONUS_INITIAL_POINTS`**) set from **3** to **1**.
+
+src/components/Instructions/Instructions.js
+- Balls bonus copy: earn points after **1 second** on the balls (was 3).
+
+public/electron.js
+- **`show-directory-picker`** accepts a path string or **`{ defaultPath, title }`**; string callers keep the capture-output dialog title.
+- **`isSafeDirectoryBasename`**: rejects absolute paths, **`..`**, and path separators so bulk IO only touches basenames in the chosen folder.
+- **`read-json-files-from-directory`**: non-recursive read of top-level **`.json`** files (**`{ name, text }`**).
+- **`write-text-files-to-directory`**: writes **`{ filename, contents }`** UTF-8 files into the chosen directory.
+
+public/preload.js
+- **`showDirectoryPicker`** forwards a path string or options object.
+- Added **`readJsonFilesFromDirectory`** and **`writeTextFilesToDirectory`**.
+
+src/services/executableService.js
+- **`pickDirectory`** accepts a path string or **`{ defaultPath, title }`** and forwards it to **`showDirectoryPicker`**.
+
+src/components/LevelEditor/LevelEditor.jsx
+- Single-file export/import now use **`levelFileFormat`** helpers (**`applyEditorAudioFields`**, **`stringifyLevelFile`**, **`parseLevelFileText`**, **`normalizeImportedLevel`**, **`triggerBrowserDownload`**).
+- Added **Export All Levels** / **Import All Levels** under the existing file actions; export scope is **`levelsForLoadSelect`** (Folder dropdown).
+- **`handleExportAll`**: writes one **`level-v1`** file per stored custom level via **`pickDirectoryAndWriteLevelFiles`**.
+- **`handleImportAll`**: reads a directory, skips invalid / default-id / duplicate files, confirms overwrites, two-pass **`levelManager.saveLevel`** so cross-file prerequisites survive, then refreshes the load list.
+
+
+
+## New Files
+
+src/components/Playing/diveTempo.js
+- New helper module centralizing skip-feedback BPM logic.
+- **`isPlausibleBpm`**: accepts a finite BPM in **`[10, 200]`**, rejecting **`0`**, **`Infinity`**, and startup spikes.
+- **`getAverageMotionBpm`**: averages the last up/down stroke tempos (**`null`** when there is no recorded motion).
+- **`calculateTempo`**: stroke tempo in BPM from **`previousDurations`** across a depth range (**`null`** for an empty sample); moved out of **`Diving.js`**.
+
+src/utils/levelFileFormat.js
+- Shared **`level-v1`** serialize/parse: **`LEVEL_FILE_FORMAT`**, **`serializeLevelFile`**, **`stringifyLevelFile`**, **`parseLevelFileText`**, **`normalizeImportedLevel`**, **`applyEditorAudioFields`**.
+- **`levelExportFileName`** (single-file **`${title}-level.json`**); **`allocateLevelExportFileName`** disambiguates bulk names with order / id.
+- **`sanitizeFileComponent`**: strips ASCII control characters by **`charCodeAt`**, then illegal filename characters.
+- **`triggerBrowserDownload`** for single-file export.
+
+src/services/levelBulkFileService.js
+- **`pickAndReadLevelJsonDirectory`**: Electron IPC, else **`showDirectoryPicker`**, else **`webkitdirectory`** input; top-level **`.json`** only.
+- **`pickDirectoryAndWriteLevelFiles`**: Electron IPC, else File System Access write, else a **`custom-levels.zip`** JSZip download.
+
+
+
+
+
+
+
+
+# Revision 40 - Capture SFX Separation, Capture Conditions Parity, ElevenLabs Autosave
+
+Capture picture and video sound effects now play on their own audio channel, so they no longer cut off other gameplay SFX. Volume is still controlled by the same SFX slider in Audio settings.
+
+HitDepth capture conditions have been relaxed to promote more frequent captures during this task.
+
+UpDown tasks now can use photo captures, and HitDepth tasks can now use video captures.
+
+The ElevenLabs voice generator now includes an 'Autosave on Generate' toggle. When set, the voice pack will automatically save after generating voice lines.
+
+
+
+## Modified Files
+
+src/components/AudioPlayer.js
+- Added **`captureSfxAudioRef`** alongside **`sfxAudioRef`** so capture clips and metronome clips use separate **`HTMLAudioElement`**s.
+- Replaced **`playSfx`** with **`playSfxOnChannel`**: pauses only the given channel before starting a new clip.
+- New **`captureSfxAtom`** effect mirrors the metronome SFX effect (play, then reset the atom to **`0`**).
+- SFX volume updates and unmount cleanup apply to both channel elements.
+
+src/components/Playing/Playing.js
+- Task advance also clears **`captureSfxAtom`**, matching the existing **`setSfx(0)`** reset.
+
+src/components/Playing/HitDepth.js
+- Capture window after first target-depth hit: **`depth !== 0`**, **`hasHitTargetOnceRef`**, **`timeLeft > 1`** (via **`diveStateRef`** / 1 Hz interval); replaces **`hitState === AT_DEPTH`**-only signaling.
+- **`hasHitTargetOnceRef`** set on first successful reach, reset on task change; **`onSignalCaptureWindow`** passes **`{ photos: windowOk, videos: windowOk }`** (Hit no longer video-blocked at component level).
+
+src/components/Playing/Diving.js
+- Unified **`windowOk`** (**`tempoOk && active && timeLeft >= vidMin`**) for photos and videos; Up-and-Down no longer passes **`photos: false`**.
+
+src/hooks/useCaptureManager.js
+- Removed **`TASK_TYPES_NO_PHOTO`** (**UPANDDOWN**) and **`TASK_TYPES_NO_VIDEO`** (**HITDEPTH**); standby/inactive HUD icons follow task **`allowPhotos`** / **`allowVideos`** only.
+
+src/services/captureService.js
+- **`playCaptureSfx`** writes **`captureSfxAtom`** instead of **`sfxAtom`**.
+- **`getLevelCaptureChannelAvailability`**: dropped task-type exclusions for Hit and Up-and-Down; **`photoPossible`** / **`videoPossible`** depend on per-task flags only.
+
+src/components/LevelEditor/TaskForm.jsx
+- **`captureSupportForTaskType`**: **Allow photos** for **`UPANDDOWN`**; **Allow videos** for **`HITDEPTH`**.
+
+src/atoms/audioAtom.js
+- Added **`captureSfxAtom`** (same request shape as **`sfxAtom`**).
+
+src/atoms/elevenlabsAtom.js
+- Added **`autosaveOnGenerateAtom`** (**`atomWithStorage`**, key **`elevenlabs_autosave_on_generate`**, default **`false`**) alongside existing ElevenLabs generator preferences.
+
+src/components/AudioPackEditor/AudioPackEditor.jsx
+- Extracted **`buildPackToSave`** and **`persistPack`** from **`handleSave`**; manual save still shows the success alert, autosave uses **`{ silent: true }`**.
+- Added **`packRef`** synced with pack state; **`handleUpdateAudioFiles`** updates the ref synchronously so autosave sees freshly committed **`audioFiles`** before React re-renders.
+- New **`handleAutosavePack`** callback passed to **`GenerateLines`** as **`onAutosavePack`**.
+
+src/components/AudioPackEditor/GenerateLines.jsx
+- **Autosave on generate** checkbox in the batch toolbar, bound to **`autosaveOnGenerateAtom`**; disabled when no pack is loaded/saved (**`!isEditing`**).
+- **`maybeAutosaveAfterRound`**: triggers **`onAutosavePack`** after batch **`onComplete`** and after successful single-line generate; skips cancelled batches and zero-success rounds.
+- Inline status: **Pack saved** on success; **Pack name required for autosave** when the checkbox is on but metadata has no pack name; hint below toolbar when name is missing.
+
+src/components/AudioPackEditor/AudioPackEditor.css
+- Added **`.generate-lines-autosave`**, **`.generate-lines-autosave-status`**, **`.generate-lines-autosave-warning`**, and **`.generate-lines-autosave-hint`** for checkbox layout and autosave feedback.
+
+
+
+
+
+
+
+
+# Revision 39 - CLI "--level-list" Parameter, Surface Penalty Fix
+
+Added a new CLI parameter "--level-list". It functions the same as the "--level" parameter, with the added functionality of supporting multiple levels provided in a comma-separated list. One level from the list is selected at random, then loaded in the same way as the "--level" parameter.
+
+Fixed a bug where multiple surface penalties could be applied at once during dive tasks, particularly at the beginning of the task.
+
+
+
+## Modified Files
+
+src/components/Playing/Diving.js
+- Added **`hasPenalizedForSurfaceRef`**: latches after a surface penalty so the same visit cannot stack scores.
+- Cleared on leaving depth 0 and on UPANDDOWN task reset so later resurfaces still penalize once each.
+- Surface penalty effect no longer depends on **`motion.dir`** / **`provideFeedback`**; applies once per surface visit after **`hasStarted`**.
+
+public/electron.js
+- Config field **`levelList`**; parse **`--level-list`** as comma-separated IDs (trim / drop empties).
+- Validation: exclusive with **`--level`**; empty list rejected; **`--calibrate-only`** / **`--validate-level`** exclusivity and **`--auto-start`** / **`--enable-captures`** requirements accept **`--level`** or **`--level-list`**.
+- On valid parse, randomly resolves **`levelList`** into **`config.level`** (logs the chosen ID) so the rest of the app uses the existing single-level path.
+
+src/App.js
+- Auto-start safety error text updated to mention **`--level`** or **`--level-list`**.
+
+ExternalDocumentation.txt
+- Documents **`--level-list`**; updates mutual-exclusion / requirement notes for **`--level`**, **`--calibrate-only`**, **`--auto-start`**, **`--validate-level`**, **`--enable-captures`**; valid/invalid combinations, exit code **5** note, and a usage example.
+
+
+
+
+
+
+
+
+# Revision 38 - Voice Generator UI Improvements
+
+The Voice Generator section of the Voice Pack Editor tab has been modified to include "Play" and "Delete" buttons for generated voice files. These buttons are linked to the audio file in the Categories section, so deleting the file from the Voice Generator will also delete it from the category. Regenerated lines will automatically replace the previous file. This reduces the need to switch between tabs when generating a voice pack.
+
+A "Clear All Lines" button has been added next to "Generate All Lines". After confirmation, "Clear All Lines" resets all lines in the Voice Generator section without deleting files. Use this button when generating voice lines by category to reset the system once a category is complete.
+
+The "Load Existing Pack" dropdown now shows the name of the currently selected voice pack, instead of "Select a pack..." at all times (finally).
+Small UI tweaks to rename "variant" to "line" for consistency.
+
+
+
+## Modified Files
+
+src/components/AudioPackEditor/GenerateLines.jsx
+- Variants store **`customContentUrl`** after successful generation; single and batch paths update it on commit.
+- **`commitBlob`**: accepts optional **`previousCustomContentUrl`**; removes the old pack entry before appending when regenerating.
+- Batch jobs carry **`previousCustomContentUrl`** so parallel saves replace the correct variant file.
+- **`handleDeleteGeneratedAudio`**: removes the variant's file from **`pack.audioFiles`** and clears **`customContentUrl`** (status → idle).
+- Variant row UI split into **Line** (status, Generate, Remove line) and **Audio** (Play, Delete audio) action groups; Audio group shown only when a file exists.
+- **`lineStateHasContent`**, **`buildClearedLineState`**: helpers to detect non-default generator state and rebuild a cleared state for the current category.
+- **`handleClearAllLines`**: confirmation dialog, cancels any in-flight batch, clears all categories' line state; pack **`audioFiles`** are untouched.
+- Batch toolbar: **Clear all lines** button (**`button-danger-outline`**), disabled while generating or when there is nothing to clear.
+
+src/components/AudioPackEditor/AudioPackEditor.jsx
+- **Load Existing Pack** `<select>` is now controlled via **`selectedPackId`**, derived from **`isEditing`** and whether **`pack.id`** appears in **`existingPacks`**.
+- Dropdown displays the loaded/saved/imported pack name when editing; shows **"Select a pack..."** for a new unsaved pack.
+- Placeholder option is **`disabled`** while a pack is loaded to avoid clearing the selection accidentally.
+
+src/components/AudioPackEditor/AudioCategoryEditor.jsx
+- Upload, play, and delete handlers refactored to use **`appendAudioFile`**, **`playPackAudioFile`**, and **`removeAudioFileFromPack`** from **`packAudioFileUtils`**.
+
+src/components/AudioPackEditor/AudioPackEditor.css
+- Variant row layout: two-column grid (**label | body**) with stacked input and action groups below the text field.
+- Added **`.generate-lines-variant-body`**, **`.generate-lines-variant-action-groups`**, **`.generate-lines-action-group`**, and **`.generate-lines-action-group--audio`** styles for visual Line/Audio separation.
+- Variant number label sizing and alignment updated (**`font-size`**, **`text-align`**).
+
+
+
+## New Files
+
+src/components/AudioPackEditor/packAudioFileUtils.js
+- **`appendAudioFile`**: append a **`custom-content://`** URL to a category/key in **`audioFiles`** (scalar or array).
+- **`removeAudioFileFromPack`**: remove a URL from a category/key entry.
+- **`playPackAudioFile`**: resolve IndexedDB blob URLs and play via **`Audio`**.
+
+
+
+
+
+
+
+
+# Revision 37 - Miscellaneous Audio Pack and Endless Task Improvements
+
+Fixed a bug in the Voice Generator where "Generate All Lines" would sometimes create duplicate voice lines instead of variants, particularly for the first category in a batch.
+
+Added "Warmup.HOLD_THREE" and "Warmup.HOLD_FOUR" to the Voice Generator UI, allowing these categories to be selected and generated like all others. Should've been done last revision. Whoops.
+
+Voice pack export the file structure now better aligns with the voice pack categories in the UI, reorganized in the last revision.
+
+Small tweak to Endless tasks to allow multiple score events to occur at the same score threshhold, by setting the second event's minimum score change and maximum score change to zero.
+
+
+
+## Modified Files
+
+src/utils/audioPackPathUtils.js
+- **`withStoreLock`** / **`storeLocks`**: promise-chain mutex keyed by **`packId:category:key`**.
+- **`storeGeneratedAudio`**: wraps **`generateUniqueAudioPath`** + **`storeAudioFile`** inside the lock so parallel variant saves cannot race on **`checkFileExists`**.
+
+src/hooks/useBatchGeneration.js
+- **`runJob`**: **`onJobSuccess`** is **`await`**ed inside an async **`.then`**; **`succeeded`** increments only after commit completes.
+- Save errors thrown from **`onJobSuccess`** are caught, counted in **`failed`**, and forwarded to **`onJobError`** (TTS failures still use the outer **`.catch`**).
+
+src/utils/audioPackMigration.js
+- Exported **`LEGACY_LVL_CATEGORIES`** and **`isLegacyCategory(category)`** for export-time filtering of pre-R36 categories.
+
+src/services/audioManager.js
+- **`exportPack`**: runs **`migrateAudioPack`** / **`migrateAudioPackFiles`** before building the ZIP; skips legacy **`Lvl_*`** categories.
+- Rewrites exported blob paths to canonical editor folders via **`allocateCanonicalExportPath`**; deduplicates blobs with **`extractedToCanonical`** / **`blobCache`** maps.
+- Manifest **`audioFiles`** passed through **`buildOrderedExportManifest`** (empty categories/keys omitted; category order matches editor groups).
+
+src/components/Tasks/audio.js
+- **`Warmup.HOLD_THREE`** and **`Warmup.HOLD_FOUR`**: changed from **`'non'`** to **`''`** so **`getGeneratableKeys`** includes them in the ElevenLabs Generate Lines subcategory list.
+
+src/components/AudioPackEditor/audioHelper.js
+- **`AUDIO_HELPER.Warmup`**: added **`HOLD_THREE`** and **`HOLD_FOUR`** metadata (description and default text) alongside existing warmup hit keys.
+
+src/components/Playing/EndlessDive.js
+- **`checkScoreEvents`**: drain loop fires all consecutive events whose thresholds are already satisfied in one scoring update; **`repeatEvents`** still wraps index after a full pass without re-running the list in the same tick.
+
+
+
+## New Files
+
+src/utils/audioPackExportUtils.js
+- **`isLegacyExportPath`**, **`extractBasenameFromStoredPath`**, **`buildCanonicalExportPath`**, **`allocateCanonicalExportPath`**: canonical export path helpers using editor **`audio/{Category}/{filename}`** layout and upload-style suffix disambiguation.
+- **`getExportCategoryOrder`**: flat category list from **`getProcessedCategoryGroups`**.
+- **`buildOrderedExportManifest`**: drops empty manifest entries and orders **`audioFiles`** to match the Audio Pack Editor group layout.
+
+
+
+
+
+
+
+
+# Revision 36 - Audio Reorganization, Hold Progress Bar Rework, Fixes and Polish
+
+Voice pack audio events have been reorganized, removing all "Lvl_*" groups and moving their respective audio events into better-fitting locations. All level-specific events have been renamed to include their level id and level number; for example, 'Lvl_begint.END_BAD' has been renamed to 'Rank.BEGINT_1_END_BAD'. The occurance of sound events in default levels and their selection in custom levels is unchanged. Backwards compatibility is maintained by recognizing old categories and automatically updating them to the new format.
+
+Added the audio events 'Warmup.HOLD_THREE' and 'Warmup.HOLD_FOUR' to the list of voice lines for Hold tasks in the custom level editor. I didn't notice that they weren't there until now. Whoops.
+
+The progress bar in Hold tasks specifically has been reworked entirely under the hood for performance and stability improvements. You should no longer have issues with the blue bar not progressing in custom levels. Visual presentation remains the same.
+
+Fixed a bug where Clap tasks would increment clap progress by 1 during voice line playback.
+
+Added animation to the "Loading..." text on application startup, for a little bit of polish.
+
+
+
+## Modified Files
+
+src/constants/audioCategoryGroups.js
+- **`CATEGORY_GROUPS`**: Session Start is **`Level`** only (removed **`Lvl_begint`**, **`Lvl_quickbg`**, **`Lvl_basicr`**, **`Lvl_cockw`**); level-specific summary and release keys live under Session Summary (**`Rank`**) and Session End (**`Release`**) respectively.
+
+src/services/audioManager.js
+- Imports **`migrateAudioPack`** / **`migrateAudioPackFiles`**; **`loadPackFromStorage`** applies migration on every pack read.
+- **`savePack`**, **`loadPack`**, **`importPack`**, active/fallback pack loading, and export paths use migrated **`audioFiles`**.
+
+src/services/audioResolver.js
+- Imports **`normalizeAudioRef`**; string refs are aliased before lookup.
+- **`Endless.ENDLESS`** fallback target updated to **`Level.BEGINT_1_START`**.
+
+src/components/Tasks/audio.js
+- Removed top-level **`Lvl_*`** objects; moved keys into **`Level`**, **`Rank`**, and **`Release`** with numbered naming convention above.
+- Removed unused **`Level.START_00`**.
+
+src/components/AudioPackEditor/audioHelper.js
+- **`AUDIO_HELPER`** metadata moved/renamed to match consolidated **`Level`**, **`Rank`**, and **`Release`** keys (including **`BEGINT_1_*`**, **`COCKW_4_*`**, etc.).
+
+src/components/Training/levels.js
+- Default level task and **`summaryAudio`** refs updated to canonical **`Level.*`**, **`Rank.*`**, and **`Release.*`** keys.
+
+src/components/LevelEditor/taskAudioConfig.js
+- **`GETREADY_AUDIO`**, **`RELEASE_AUDIO`**, and **`DEFAULT_LEVEL_SUMMARY_AUDIO_OPTIONS`** updated to new key names.
+- **`HOLD_AUDIO`**: added **`Warmup.HOLD_THREE`** and **`Warmup.HOLD_FOUR`** for custom-level hold tasks.
+
+src/components/Playing/HoldDepth.js
+- Imports **`HoldProgressBar`** and **`useHoldProgress`**; replaces **`CountdownBar`** for hold-task progress display.
+- **`useHoldProgress(holdState, task?.time, task?.id)`** returns **`barRef`** for imperative bar updates; scoring **`timeTracking`**, completion, audio, vibration, and penalty logic unchanged.
+
+src/hooks/useClapDetection.js
+- Gameplay lifecycle: suppress **`onClap`** whenever instruction phase is not **`ready`** (blocks **`idle`**, **`pending`**, **`playing`**, and **`cooldown`**); calibration **`own`** lifecycle unchanged.
+
+src/components/AudioPlayer.js
+- **`stopVoiceRequest`**: capture **`wasInstructionPlaying`** before clearing ref; cooldown → **`ready`** only when instruction voice was actually playing (avoids premature **`ready`** on task advance with instruction audio).
+- Instruction voice effect: clear **`instructionTailTimerRef`** before starting a new clip so a prior stop’s tail timer cannot unlock claps mid-instruction.
+
+src/components/Playing/Playing.js
+- **`ClapDetector`**: **`key={currentLevel.currentTask.id}`** so each Clap task remounts with fresh clap count and detection warmup (matches other task components).
+
+src/App.js
+- Startup loading screen: replaced static **`<h2>Loading...</h2>`** with **`loading-ellipsis`** heading — static **`Loading`** text plus three **`loading-ellipsis__dot`** spans; **`aria-live="polite"`** and **`aria-busy="true"`** on the heading.
+
+src/App.css
+- Added **`.loading-ellipsis`** / **`.loading-ellipsis__dots`** / **`.loading-ellipsis__dot`** styles and **`@keyframes loading-ellipsis-dot-1/2/3`** opacity animations (1.6s linear loop, four cumulative phases).
+- Fixed **`3ch`** dot container width; hidden **`::before`** strut for baseline alignment; absolutely positioned dots with tuned **`font-size`**, **`font-weight`**, and horizontal spacing.
+
+
+
+## New Files
+
+src/constants/audioRefAliases.js
+- **`AUDIO_REF_ALIASES`**: maps legacy **`Lvl_*.*`**, prior interim refs (e.g. **`Level.BEGINT_START`**, **`Rank.COCKW_END_PERFECT`**, **`Release.COCKW_PRE_RELEASE_1`**) to canonical keys.
+- **`normalizeAudioRef(ref)`**: single entry point for runtime ref normalization.
+
+src/utils/audioPackMigration.js
+- **`migrateAudioPackFiles`**: converts legacy **`Lvl_*`** pack categories and renames **`Level`** / **`Rank`** / **`Release`** keys to current names (idempotent).
+- **`migrateAudioPack`**: wraps full pack migration for **`audioManager`** load/save/import.
+
+src/hooks/useHoldProgress.js
+- **`useHoldProgress(holdState, taskTime, taskId)`**: visual-only hold progress hook; mirrors hold-state accumulation rates (**`CORRECT_DEPTH`** 1×, **`DEEP_ONE`** 0.25×, **`SHALLOW_ONE`** reverse) in refs.
+- Continuous **`requestAnimationFrame`** loop per **`taskId`** reads **`holdStateRef`** and updates bar DOM via **`applyBarToDom`**; resets on task change or **`NOT_STARTED`**.
+
+src/components/Playing/HoldProgressBar.js
+- Hold-task progress bar shell (track, fill, seconds label) matching **`CountdownBar`** styling; exposes fill and label DOM nodes through **`barRef`** for imperative updates by **`useHoldProgress`**.
+
+
+
+
+
+
+
+
+# Revision 35 - ElevenLabs Voice Line Generation
+
+Ported the Elevenlabs voice line generator from v19 into this version of the project, with some modifications and enhancements. Tweaks to mirror ElevenLabs TTS UI include:
+
+- Switched from numerical inputs to sliders.
+- Addition of the "Style Exaggeration" slider.
+- Warning messages when stability < 30% and style exaggeration > 50%
+
+Performance enhancements and other tweaks include:
+
+- Batch generation of multiple lines, including for multiple audio events, variants of voice lines within the same event, or both.
+- New categories of voice lines to align with this fork's categorization.
+- Reorganized audio categories to match the voice pack editor categorization.
+- VoiceID is optionally saved in pack metadata, and automatically loaded into the Voice ID field when loading the voice pack.
+
+
+
+## Modified Files
+
+src/components/AudioPackEditor/AudioPackEditor.css
+- **`.editor-subtabs`** / **`.editor-subtab-panel`**: Categories | Generate Lines tab bar and bordered content panel below pack metadata.
+- **`.generate-lines-*`**: banners, API config grid, category/subcategory dropdowns, multi-variant rows, per-variant status colours, batch toolbar, and summary text.
+- **`.voice-setting-slider`**, **`.voice-setting-slider-group`**, **`.voice-setting-warning`**: compact range-slider rows and reserved-slot instability warnings.
+
+src/components/AudioPackEditor/AudioPackEditor.jsx
+- Imports **`GenerateLines`**, **`voiceIdAtom`**, **`getProcessedCategoryGroups`**; **`activeSubtab`** state (**`'categories'`** | **`'generate'`**).
+- Categories view and **Generate Lines** subtab share **`getProcessedCategoryGroups`** for grouped category headings (Baseline, Session Start, Task Assignment, etc.).
+- **`handleSave`**: merges **`elevenLabsVoiceId`** from **`voiceIdAtom`** into the saved pack; sets **`isEditing(true)`** after save so generation can proceed.
+- Displays saved **ElevenLabs Voice ID** beneath pack fields when **`pack.elevenLabsVoiceId`** is set.
+
+src/components/AudioPackEditor/AudioFileUploader.jsx
+- Replaces inline unique-path logic with shared **`generateUniqueAudioPath`** from **`src/utils/audioPackPathUtils.js`** (letter-suffix deduplication unchanged).
+
+src/services/audioManager.js
+- Pack export manifest includes optional **`elevenLabsVoiceId`** when present on the pack.
+- Pack import restores **`elevenLabsVoiceId`** from **`manifest.pack`** into stored pack metadata.
+
+src/hooks/useCaptureManager.js
+- Capture-window rolls are throttled to once every **3000** ms (**`lastRollAtRef`**), up from **1000** ms.
+
+
+
+## New Files
+
+src/components/AudioPackEditor/GenerateLines.jsx
+- Main **Generate Lines (ElevenLabs)** UI: API Key / Voice ID fields, voice-setting sliders, grouped category + subcategory **`<select>`**s, per-cue variant list (add / remove / per-variant generate), category-scoped and subcategory-scoped batch generate, cancel, retry-failed, and auto-commit via **`storeGeneratedAudio`** + **`onUpdateAudioFiles`**.
+- Variant state keyed as **`category.key`** with job IDs **`category.key#variantId`**; only non-empty variant text is queued.
+- *Adapted from v19* **`VoicePackGenerator.js`**, **`AudioGeneration.js`**, and **`AudioKeyGenerator.js`** — reimplemented for the v18r35 Audio Pack Editor workflow (IndexedDB pack storage, subtabs, multi-variant batching, no in-memory blob pack).
+
+src/components/AudioPackEditor/VoiceSettingSlider.jsx
+- Reusable labelled range slider with optional **`formatValue`** (Speed shows **0.70–1.20** scale; percentage sliders show **`N%`**).
+- Slider row layout follows **`VolumeControl.jsx`** (v18r35); replaces v19 **`NumberControl`** for voice parameters in this editor.
+
+src/atoms/elevenlabsAtom.js
+- **`apiKeyAtom`** / **`voiceIdAtom`**: **`atomWithStorage`** (**`elevenlabs_api_key`**, **`elevenlabs_voice_id`**).
+- Session atoms **`speedAtom`** (**`0.9`**, range **0.7–1.2**), **`stabilityAtom`**, **`similarityAtom`**, **`styleAtom`**.
+- *Ported from v19* **`moddingAtom.js`** ElevenLabs fields (**`apiKeyAtom`**, **`voiceIdAtom`**, **`speedAtom`**, **`stabilityAtom`**, **`similarityAtom`**); split into a dedicated module; **`styleAtom`** added; speed stored as API-scale float (v19 used **70–120** divided by 100 at request time).
+
+src/services/elevenlabsService.js
+- **`generateSpeech(text, settings)`**: POST **`/v1/text-to-speech/{voiceId}`** with **`eleven_multilingual_v2`**, **`mp3_44100_128`**, and **`voice_settings`** (**`stability`**, **`similarity_boost`**, **`speed`**, **`style`**).
+- **`ELEVENLABS_CONCURRENCY`**: **`3`**.
+- *Ported from v19* **`AudioGeneration.js`** inline **`fetch`** body and error handling; extracted to a service; adds **`style`**; speed sent directly (not **`/100`**).
+
+src/components/AudioPackEditor/audioHelper.js
+- **`AUDIO_HELPER`**: per-category / per-key **`description`** and **`defaultText`** metadata for v18r35 **`AUDIO`** keys (Calibration, Feedback, Hold, Level, Custom1–40, Hit.**`ONE`**, etc.).
+- *Adapted from v19* **`components/AudioGenerator/audioHelper.js`** — category/key tables rewritten for v18r35 voice taxonomy; not used to pre-fill variant text (variants start blank).
+
+src/utils/generatableAudioKeys.js
+- **`getGeneratableCategories`**: all **`AUDIO`** categories except **`NONE`** / **`Sfx`**, plus **`Custom`**.
+- **`getGeneratableKeys`**: subcategory keys per category (includes **`CUSTOM_VOICE_SLOT_KEYS`**, empty-string paths such as **`Hit.ONE`**).
+- **`makeLineId`**: **`category.key`** event id helper.
+- *Concept from v19* **`VoicePackGenerator`** category/key filtering; new utility module for Generate Lines and batch scoping.
+
+src/hooks/useBatchGeneration.js
+- Concurrent batch runner over ElevenLabs jobs with **`cancelBatch`**, **`isRunning`**, **`summary`**, and per-job **`onJobStart`** / **`onJobSuccess`** / **`onJobError`** / **`onComplete`** callbacks.
+- *New in v18r35* — v19 generated audio one cue at a time inside **`AudioGeneration`** without a shared concurrency hook.
+
+src/constants/audioCategoryGroups.js
+- **`CATEGORY_GROUPS`** headings (Baseline, Session Start, Task Assignment, Performance, Session End, Session Summary, Custom) and **`getProcessedCategoryGroups`** filtered against live **`AUDIO`** keys.
+- Shared by **Categories** subtab and **Generate Lines** dropdowns.
+- *New in v18r35* — v19 **`VoicePackGenerator`** used a flat category list without grouped headings.
+
+src/utils/audioPackPathUtils.js
+- **`generateUniqueAudioPath`**: **`a`–**`z`** then timestamp suffix deduplication via **`audioFileService.checkFileExists`**.
+- **`storeGeneratedAudio`**: writes blob to IndexedDB and returns **`customContentUrl`** + **`filePath`**.
+- Logic extracted from former inline path handling in **`AudioFileUploader.jsx`**; also used by **`GenerateLines`** auto-commit.
+
+
+
+
+
+
+
+
 # Revision 34 - Webcam Photo and Video Captures
 
 Adds optional functionality for the webcam to capture .jpg and .mp4 footage during gameplay. The level will attempt to time its captures based on the task type to show off your skills. Decide if you want a notification of a capture occuring; leave them enabled for extra embarrassment, or set them to hidden for anticipation of never knowing if you're being recorded. This is a potentially controversial feature, so several safeguards were put in place to ensure that captures cannot be taken without explicit user permission:
@@ -158,6 +1280,7 @@ src/utils/captureWebcamRef.js
 # Revision 33 - Custom Level Editor Folder Filter, Copy/Paste Tasks, Buttplug Task Extensions
 
 The "Load Existing Level" block was updated to include an optional filter by custom subfolder. Folders are displayed when there is at least one level assigned to that folder. Selecting a folder will limit the level dropdown menu to only levels in that folder. The default value "All Folders" displays every level regardless of folder, matching the previous behavior.
+
 A new clipboard function was added to tasks in the custom level editor. Beneath the buttons that reorder tasks, a "Copy" button was added – press this button to copy the existing task and configuration data to the clipboard. Use the new task list option "+ Paste {Task}" to append that task type and configuration to the end of the level. Use the "(Clear Clipboard)" option to remove the current task from the clipboard, or copy a different task to overwrite the clipboard.
 
 Extended Buttplug.io integration to include the following task behaviors:
@@ -290,6 +1413,7 @@ src/constants/customVoiceCategories.js
 Due to a conflict with Chromium's built-in "--headless" parameter, the app-specific "--headless" CLI parameter has been renamed to "--auto-start". This improves compatibility when launching the application via third-party processes.
 
 The "--auto-start" parameter (formerly "--headless") now explicitly requires the "--level" parameter to be included in order to function. Refer to "ExternalDocumentation.txt" for more info.
+
 The application title and a pause/play button are now included above the camera feed when using the "--auto-start" parameter. This allows the user to pause the level in autostart mode - this was not possible before, which was a significant oversight. Whoops.
 
 Cancelling a level when running the application in external mode (via passing the "--level" parameter, including when "--auto-start" is passed) will now close the application with exit code 1 rather than returning to the level selection screen. This should avoid situations where the user is free to choose a new level to complete in place of the assigned level.
@@ -426,6 +1550,7 @@ src/components/Playing/EndlessDive.js
 # Revision 28 - More Audio Improvements
 
 Fully resolved an issue (for real this time) where the background music test wouldn't be interrupted by switching tabs during the music fade-out time if the test was already ended.
+
 Updated clap detection to wait until instruction voice lines completes (plus a 200ms threshold) before counting any claps towards the total. This should reduce random increments in total claps during the beginning of the task.
 
 
@@ -1008,6 +2133,7 @@ Session summary voice selection was overhauled; feedback is no longer bound sole
 
 - Default levels: when an "END" or "END_*" entry exists in the "Level" audio category, that voice line is used instead of the default Rank categories. This includes Level 1 "Beginner Training", Level 2 "Quick Blow and Go", and Level 4 "Cock Worship 101" (perfect rank only). Levels that were flagged as `soft` still use soft summary lines, where applicable.
 - Custom levels: a new "Session Summary Voice" section was added under the task list. Per-rank voice lines can now be picked independently from any line used in session summary feedback, with defaults map to the standard "Rank.END_*" categories. An optional "Show Custom Voice Lines" flag can be enabled to use custom voice categories instead, mirroring task custom-voice behavior.
+
 Speech model ASR bundle was upgraded to a larger, more accurate version. Both models are available in `public/models/sml`(original) and `public/models/lrg`(current, default). Swap between them by copying the respective `asr` and replacing the `public/asr` folder as needed.
 
 The CLI parameter '--audio-pack' now overrides the level's selected voice pack, provided the CLI's specified audio pack exists. Behavior is now consistent with the background track CLI parameter. 'ExternalDocumentation.txt' was updated accordingly.

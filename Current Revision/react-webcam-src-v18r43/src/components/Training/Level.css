@@ -1,0 +1,45 @@
+.level {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px
+}
+
+.box h4 {
+    margin: 0.25rem;
+    text-align: center;
+}
+
+.box pre {
+    text-align: center;
+}
+
+.box hr {
+    border-top: none;
+    border-bottom: 1px dashed var(--line);
+    width: 100%;
+}
+
+.checkmark {
+    display: inline-block;
+    color: var(--accent);
+    font-weight: bold;
+    margin-left: 5px;
+}
+
+.level-difficulty {
+    font-size: 0.85em;
+    color: var(--muted);
+    margin-top: 4px;
+}
+
+.level.level-locked {
+    background-color: var(--surface-soft);
+    border-radius: 4px;
+    opacity: 0.88;
+    filter: grayscale(0.28);
+}
+
+.level.level-locked .button:not(:hover) {
+    opacity: 0.92;
+}

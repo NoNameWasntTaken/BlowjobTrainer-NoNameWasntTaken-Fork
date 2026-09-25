@@ -1,0 +1,93 @@
+.score-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: 300px;
+    width: 100%;
+    margin: 16px auto;
+}
+
+.score-item {
+    background: #f5f5f5;
+    border-radius: 4px;
+    padding: 0.5rem 1rem;
+    display: flex;
+}
+
+.score-item.latest .score-points {
+    font-size: 1.3em;
+}
+
+.score-item.latest .score-bonus {
+    font-size: 1.1em;
+}
+
+.score-item.failed {
+    background: #fda4af;
+    color: white;
+}
+
+.score-main {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+}
+
+.score-points {
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+.score-bonus {
+    color: #16a34a;
+    font-size: 0.9em;
+}
+
+.score-grade {
+    font-weight: 500;
+    font-size: 0.9em;
+    color: #64748b;
+}
+
+.score-grade.perfect {
+    color: #333;
+    letter-spacing: 0.1rem;
+    font-weight: 600;
+}
+
+.score-grade.good {
+    color: #444;
+    letter-spacing: 0.1rem;
+    font-weight: 500;
+}
+
+.score-grade.pass {
+    color: #555;
+}
+
+.score-grade.fail {
+    color: white;
+    font-weight: bold;
+}
+
+.score-item.penalty {
+    background: #dc2626;
+    color: white;
+}
+
+.score-grade.penalty {
+    color: white;
+    font-weight: bold;
+}
+
+.dive-issues {
+    font-size: 0.8em;
+    color: #666;
+    margin-top: 2px;
+    font-style: italic;
+}
+
+.failed .dive-issues {
+    color: rgba(255, 255, 255, 0.8);
+}
